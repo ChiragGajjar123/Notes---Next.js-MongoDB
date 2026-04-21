@@ -120,6 +120,22 @@
   body {
     @apply bg-background text-foreground font-sans transition-colors duration-300;
   }
+
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [role="combobox"]:not([aria-disabled="true"]),
+  [role="switch"]:not([aria-disabled="true"]),
+  [role="menuitem"]:not([aria-disabled="true"]),
+  [role="option"]:not([aria-disabled="true"]),
+  a {
+    cursor: pointer !important;
+  }
+
+  button:disabled,
+  [aria-disabled="true"],
+  [data-disabled="true"] {
+    cursor: not-allowed !important;
+  }
 }
 
 .line-clamp-2 {

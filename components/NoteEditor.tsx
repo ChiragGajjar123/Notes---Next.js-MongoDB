@@ -44,20 +44,22 @@ export function NoteEditor({ isOpen, onClose, onSave, note }: NoteEditorProps) {
   });
 
   useEffect(() => {
+    if (!isOpen) return;
+    
     if (note) {
       setTitle(note.title);
       setCategory(note.category);
       setTags(note.tags.join(', '));
       setColor(note.color);
-      editor?.commands.setContent(note.content);
+      setTimeout(() => editor?.commands.setContent(note.content), 0);
     } else {
       setTitle('');
       setCategory('other');
       setTags('');
       setColor('#ffffff');
-      editor?.commands.setContent('');
+      setTimeout(() => editor?.commands.setContent(''), 0);
     }
-  }, [note, editor]);
+  }, [note, editor, isOpen]);
 
   const handleSave = () => {
     if (!title.trim() || !editor) return;

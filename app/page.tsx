@@ -54,8 +54,12 @@ export default function Home() {
       if (showArchived) params.append('archived', 'true');
       if (searchQuery) params.append('search', searchQuery);
       if (selectedCategory !== 'all') params.append('category', selectedCategory);
+      params.append('t', Date.now().toString());
 
-      const response = await fetch(`/api/notes?${params}`);
+      const response = await fetch(`/api/notes?${params}`, {
+        cache: 'no-store',
+        headers: { 'Pragma': 'no-cache' }
+      });
       if (response.ok) {
         const data = await response.json();
         setNotes(data);
