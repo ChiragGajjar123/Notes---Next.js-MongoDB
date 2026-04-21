@@ -31,6 +31,7 @@ export function NotesDashboard() {
   const [isCreateCategoryOpen, setIsCreateCategoryOpen] = useState(false);
   const [newCreatedCategory, setNewCreatedCategory] = useState('');
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   const categories = ['all', ...Array.from(new Set([...savedCategories, ...notes.map(n => n.category)])).filter(c => c && c.toLowerCase() !== 'all')];
 
@@ -65,9 +66,16 @@ export function NotesDashboard() {
 
   useEffect(() => {
     if (session) {
-      fetchCategories();
-      fetchNotes();
-      fetchUserSettings();
+      const init = async () => {
+        setIsInitialLoading(true);
+        await Promise.all([
+          fetchCategories(),
+          fetchNotes(false), // don't set internal loading here, we handle it in this wrapper
+          fetchUserSettings()
+        ]);
+        setIsInitialLoading(false);
+      };
+      init();
     }
   }, [session, showArchived]);
 
@@ -83,7 +91,8 @@ export function NotesDashboard() {
     }
   }, [isDarkMode]);
 
-  const fetchNotes = async () => {
+  const fetchNotes = async (isInitial = false) => {
+    if (isInitial) setIsInitialLoading(true);
     try {
       const params = new URLSearchParams();
       if (showArchived) params.append('archived', 'true');
@@ -101,6 +110,8 @@ export function NotesDashboard() {
       }
     } catch (error) {
       console.error('Error fetching notes:', error);
+    } finally {
+      if (isInitial) setIsInitialLoading(false);
     }
   };
 
@@ -261,7 +272,7 @@ export function NotesDashboard() {
     }
   };
 
-  if (status === 'loading') {
+  if (status === 'loading' || (session && isInitialLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
