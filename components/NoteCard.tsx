@@ -2,7 +2,7 @@
 
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Pin, Archive, Trash2, Edit, MoreVertical } from 'lucide-react';
+import { Pin, Archive, Trash2, Edit, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 import { Note } from '@/types';
 
@@ -15,87 +15,116 @@ interface NoteCardProps {
 }
 
 export function NoteCard({ note, onEdit, onDelete, onTogglePin, onToggleArchive }: NoteCardProps) {
+  // Strip HTML tags for clean preview
+  const plainTextContent = note.content.replace(/<[^>]+>/g, ' ');
+
   return (
     <Card 
-      className="p-4 hover:shadow-md transition-shadow cursor-pointer relative group"
-      style={{ backgroundColor: note.color }}
+      className="p-6 h-full flex flex-col group cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/10 border border-border/50 bg-card/80 backdrop-blur-xl dark:bg-card/40 overflow-hidden relative rounded-2xl"
+      onClick={() => onEdit(note)}
     >
-      <div className="flex justify-between items-start mb-2">
-        <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100 line-clamp-2">
+      {/* Optional Note Color Accent */}
+      {note.color && note.color !== '#ffffff' && note.color !== '#000000' && (
+        <div 
+          className="absolute top-0 left-0 right-0 h-1"
+          style={{ backgroundColor: note.color }}
+        />
+      )}
+
+      {/* Floating Actions (visible on hover) */}
+      <div className="absolute top-4 right-4 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 bg-background/80 backdrop-blur-md rounded-full shadow-sm p-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 rounded-full hover:bg-primary/20 hover:text-primary transition-colors"
+          onClick={(e) => {
+            e.stopPropagation();
+            onTogglePin(note._id);
+          }}
+        >
+          <Pin className={`h-4 w-4 ${note.isPinned ? 'fill-primary text-primary' : ''}`} />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 rounded-full hover:bg-primary/20 hover:text-primary transition-colors"
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit(note);
+          }}
+        >
+          <Edit className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {note.isPinned && (
+        <div className="absolute top-4 right-4 group-hover:opacity-0 transition-opacity duration-300">
+          <Pin className="h-5 w-5 text-primary fill-primary" />
+        </div>
+      )}
+
+      <div className="flex-1">
+        <h3 className="font-bold text-xl text-foreground mb-3 pr-8 line-clamp-2 leading-tight">
           {note.title}
         </h3>
-        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={(e) => {
-              e.stopPropagation();
-              onTogglePin(note._id);
-            }}
-          >
-            <Pin className={`h-4 w-4 ${note.isPinned ? 'fill-current' : ''}`} />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit(note);
-            }}
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-      
-      <p className="text-gray-600 dark:text-gray-300 mb-3 line-clamp-3">
-        {note.content}
-      </p>
-      
-      <div className="flex justify-between items-center">
-        <div className="flex gap-2">
-          {note.category && (
-            <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full dark:bg-blue-900 dark:text-blue-200">
-              {note.category}
-            </span>
-          )}
-          {note.tags.slice(0, 2).map((tag, index) => (
-            <span key={index} className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full dark:bg-gray-700 dark:text-gray-200">
-              {tag}
-            </span>
-          ))}
-        </div>
         
-        <div className="flex gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleArchive(note._id);
-            }}
-          >
-            <Archive className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 hover:text-red-600"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(note._id);
-            }}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
+        <p className="text-muted-foreground mb-6 line-clamp-3 text-sm leading-relaxed">
+          {plainTextContent || 'Empty note...'}
+        </p>
       </div>
       
-      <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-        {format(new Date(note.createdAt), 'MMM d, yyyy')}
+      <div className="mt-auto pt-4 border-t border-border/40">
+        <div className="flex flex-wrap justify-between items-end gap-4">
+          <div className="flex flex-wrap gap-2">
+            {note.category && note.category !== 'all' && (
+              <span className="px-2.5 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-md uppercase tracking-wider">
+                {note.category}
+              </span>
+            )}
+            {note.tags.slice(0, 2).map((tag, index) => (
+              <span key={index} className="px-2.5 py-1 bg-muted/50 text-muted-foreground text-xs font-medium rounded-md border border-border/50">
+                #{tag}
+              </span>
+            ))}
+            {note.tags.length > 2 && (
+              <span className="px-2 py-1 text-muted-foreground text-xs font-medium">
+                +{note.tags.length - 2}
+              </span>
+            )}
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <div className="flex items-center text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+              <Calendar className="h-3 w-3 mr-1 opacity-70" />
+              {format(new Date(note.createdAt), 'MMM d, yyyy')}
+            </div>
+            
+            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ml-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 rounded-md hover:bg-secondary transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleArchive(note._id);
+                }}
+              >
+                <Archive className="h-3.5 w-3.5 text-muted-foreground" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 rounded-md hover:bg-destructive/10 hover:text-destructive transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(note._id);
+                }}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
     </Card>
   );
