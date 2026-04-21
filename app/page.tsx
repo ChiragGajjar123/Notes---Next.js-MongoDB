@@ -51,6 +51,20 @@ export default function Home() {
     }
   };
 
+  const fetchUserSettings = async () => {
+    try {
+      const response = await fetch('/api/user/settings');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.theme) {
+          setIsDarkMode(data.theme === 'dark');
+        }
+      }
+    } catch (e) {
+      console.error('Failed to fetch user settings:', e);
+    }
+  };
+
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/auth/signin');
@@ -61,6 +75,7 @@ export default function Home() {
     if (session) {
       fetchCategories();
       fetchNotes();
+      fetchUserSettings();
     }
   }, [session, showArchived]);
 
@@ -239,6 +254,21 @@ export default function Home() {
     }
   };
 
+  const toggleDarkMode = async () => {
+    const newMode = !isDarkMode;
+    setIsDarkMode(newMode);
+    
+    try {
+      await fetch('/api/user/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ theme: newMode ? 'dark' : 'light' })
+      });
+    } catch (error) {
+      console.error('Failed to save theme preference:', error);
+    }
+  };
+
   if (status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -290,7 +320,7 @@ export default function Home() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setIsDarkMode(!isDarkMode)}
+                onClick={toggleDarkMode}
                 className="rounded-full hover:bg-muted/50 transition-all"
               >
                 {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
