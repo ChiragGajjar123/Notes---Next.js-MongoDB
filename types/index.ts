@@ -2,7 +2,7 @@ export interface Note {
   _id: string;
   title: string;
   content: string;
-  category: 'personal' | 'work' | 'ideas' | 'tasks' | 'other';
+  category: string;
   tags: string[];
   isPinned: boolean;
   isArchived: boolean;

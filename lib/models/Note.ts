@@ -14,7 +14,6 @@ const NoteSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: ['personal', 'work', 'ideas', 'tasks', 'other'],
     default: 'other'
   },
   tags: [{
@@ -49,4 +48,7 @@ NoteSchema.index({ userId: 1, title: 'text', content: 'text' });
 NoteSchema.index({ userId: 1, category: 1 });
 NoteSchema.index({ userId: 1, tags: 1 });
 
-export default mongoose.models.Note || mongoose.model('Note', NoteSchema);
+// Force schema recompilation for Next.js HMR
+delete mongoose.models.Note;
+
+export default mongoose.model('Note', NoteSchema);

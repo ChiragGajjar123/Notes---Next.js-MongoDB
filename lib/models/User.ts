@@ -25,6 +25,10 @@ const UserSchema = new mongoose.Schema({
   emailVerified: {
     type: Date,
     default: null
+  },
+  categories: {
+    type: [String],
+    default: []
   }
 }, {
   timestamps: true
@@ -32,4 +36,7 @@ const UserSchema = new mongoose.Schema({
 
 UserSchema.index({ email: 1 });
 
-export default mongoose.models.User || mongoose.model('User', UserSchema);
+// Force schema recompilation for Next.js HMR
+delete mongoose.models.User;
+
+export default mongoose.model('User', UserSchema);

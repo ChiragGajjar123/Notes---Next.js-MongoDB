@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { NoteCard } from '@/components/NoteCard';
 import { NoteEditor } from '@/components/NoteEditor';
-import { Plus, Search, LogOut, Archive, FileText, Moon, Sun, Sparkles } from 'lucide-react';
+import { Plus, Search, LogOut, Archive, FileText, Moon, Sun, Sparkles, Pencil, Trash2, AlertTriangle } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Note } from '@/types';
 
 export default function Home() {
@@ -22,7 +23,33 @@ export default function Home() {
   const [showArchived, setShowArchived] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
 
-  const categories = ['all', 'personal', 'work', 'ideas', 'tasks', 'other'];
+  const [isRenameOpen, setIsRenameOpen] = useState(false);
+  const [categoryToRename, setCategoryToRename] = useState<string | null>(null);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [isDeleteWarnOpen, setIsDeleteWarnOpen] = useState(false);
+  const [isRenaming, setIsRenaming] = useState(false);
+
+  const [savedCategories, setSavedCategories] = useState<string[]>([]);
+  const [isCreateCategoryOpen, setIsCreateCategoryOpen] = useState(false);
+  const [newCreatedCategory, setNewCreatedCategory] = useState('');
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+
+  const categories = ['all', ...Array.from(new Set([...savedCategories, ...notes.map(n => n.category)])).filter(Boolean)];
+
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('/api/categories?t=' + Date.now(), { 
+        cache: 'no-store',
+        headers: { 'Pragma': 'no-cache' }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setSavedCategories(data.categories || []);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -32,6 +59,7 @@ export default function Home() {
 
   useEffect(() => {
     if (session) {
+      fetchCategories();
       fetchNotes();
     }
   }, [session, showArchived]);
@@ -85,6 +113,61 @@ export default function Home() {
     }
 
     setFilteredNotes(filtered);
+  };
+
+  const handleRenameCategorySubmit = async () => {
+    if (!categoryToRename || !newCategoryName.trim()) return;
+    setIsRenaming(true);
+    try {
+      const response = await fetch('/api/categories', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ oldName: categoryToRename, newName: newCategoryName.trim() })
+      });
+      if (response.ok) {
+        if (selectedCategory === categoryToRename) {
+          setSelectedCategory(newCategoryName.trim());
+        }
+        await fetchNotes();
+        await fetchCategories();
+        setIsRenameOpen(false);
+      }
+    } catch (error) {
+      console.error('Failed to rename category:', error);
+    } finally {
+      setIsRenaming(false);
+    }
+  };
+
+  const handleCreateCategorySubmit = async () => {
+    if (!newCreatedCategory.trim()) return;
+    setIsCreatingCategory(true);
+    try {
+      const response = await fetch('/api/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newCreatedCategory.trim() })
+      });
+      if (response.ok) {
+        await fetchCategories();
+        setIsCreateCategoryOpen(false);
+        setNewCreatedCategory('');
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsCreatingCategory(false);
+    }
+  };
+
+  const handleExecuteDeleteEmptyCategory = async (name: string) => {
+    try {
+      const response = await fetch(`/api/categories?name=${encodeURIComponent(name)}`, { method: 'DELETE' });
+      if (response.ok) {
+        await fetchCategories();
+        await fetchNotes();
+      }
+    } catch (e) { console.error(e); }
   };
 
   const handleCreateNote = () => {
@@ -244,18 +327,58 @@ export default function Home() {
               </div>
 
               <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3 px-2">Folders</h3>
+                <div className="flex items-center justify-between mb-3 px-2">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Folders</h3>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 rounded-md hover:bg-primary/20 hover:text-primary transition-colors" onClick={() => setIsCreateCategoryOpen(true)}>
+                    <Plus className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
                 <div className="space-y-1">
                   {categories.map((category) => (
-                    <Button
-                      key={category}
-                      variant={selectedCategory === category ? 'secondary' : 'ghost'}
-                      className={`w-full justify-start capitalize rounded-xl transition-all ${selectedCategory === category ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:bg-muted/50'}`}
-                      onClick={() => setSelectedCategory(category)}
-                    >
-                      <FileText className={`h-4 w-4 mr-3 ${selectedCategory === category ? 'text-primary' : 'text-muted-foreground'}`} />
-                      {category}
-                    </Button>
+                    <div key={category} className="group relative flex items-center">
+                      <Button
+                        variant={selectedCategory === category ? 'secondary' : 'ghost'}
+                        className={`flex-1 justify-start capitalize rounded-xl transition-all ${selectedCategory === category ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:bg-muted/50'}`}
+                        onClick={() => setSelectedCategory(category)}
+                      >
+                        <FileText className={`h-4 w-4 mr-3 flex-shrink-0 ${selectedCategory === category ? 'text-primary' : 'text-muted-foreground'}`} />
+                        <span className="truncate pr-10">{category}</span>
+                      </Button>
+                      
+                      {category !== 'all' && (
+                        <div className="absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-7 w-7 rounded-lg hover:bg-background shadow-sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setCategoryToRename(category);
+                              setNewCategoryName(category);
+                              setIsRenameOpen(true);
+                            }}
+                          >
+                            <Pencil className="h-3 w-3 text-muted-foreground" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-7 w-7 rounded-lg hover:bg-destructive/10 hover:text-destructive shadow-sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const hasNotes = notes.some(n => n.category === category);
+                              if (hasNotes) {
+                                setIsDeleteWarnOpen(true);
+                              } else {
+                                handleExecuteDeleteEmptyCategory(category);
+                              }
+                            }}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   ))}
                 </div>
               </div>
@@ -308,7 +431,85 @@ export default function Home() {
         onClose={() => setIsEditorOpen(false)}
         onSave={handleSaveNote}
         note={editingNote}
+        existingCategories={categories.filter(c => c !== 'all')}
+        onCreateCategory={async (name) => {
+          setNewCreatedCategory(name);
+          await fetch('/api/categories', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: name.trim() })
+          });
+          fetchCategories();
+        }}
       />
+      
+      <Dialog open={isCreateCategoryOpen} onOpenChange={setIsCreateCategoryOpen}>
+        <DialogContent className="sm:max-w-[425px] rounded-2xl glass dark:glass-dark border-border/50">
+          <DialogHeader>
+            <DialogTitle>Create New Category</DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            <Input
+              value={newCreatedCategory}
+              onChange={(e) => setNewCreatedCategory(e.target.value)}
+              placeholder="e.g. Brainstorms, Finance"
+              className="rounded-xl border-border/80 bg-background/50 h-11"
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setIsCreateCategoryOpen(false)} className="rounded-xl" disabled={isCreatingCategory}>Cancel</Button>
+            <Button onClick={handleCreateCategorySubmit} className="rounded-xl font-bold shadow-md shadow-primary/20" disabled={isCreatingCategory || !newCreatedCategory.trim()}>
+              {isCreatingCategory ? 'Adding...' : 'Add Category'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isRenameOpen} onOpenChange={setIsRenameOpen}>
+        <DialogContent className="sm:max-w-[425px] rounded-2xl glass dark:glass-dark border-border/50">
+          <DialogHeader>
+            <DialogTitle>Rename Category</DialogTitle>
+            <DialogDescription>
+              This will update the category string internally for all notes currently inside this folder.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            <Input
+              value={newCategoryName}
+              onChange={(e) => setNewCategoryName(e.target.value)}
+              placeholder="e.g. Project Specs"
+              className="rounded-xl border-border/80 bg-background/50 h-11"
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setIsRenameOpen(false)} className="rounded-xl" disabled={isRenaming}>Cancel</Button>
+            <Button onClick={handleRenameCategorySubmit} className="rounded-xl font-bold shadow-md shadow-primary/20" disabled={isRenaming || !newCategoryName.trim()}>
+              {isRenaming ? 'Saving...' : 'Save Category'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isDeleteWarnOpen} onOpenChange={setIsDeleteWarnOpen}>
+        <DialogContent className="sm:max-w-[425px] rounded-2xl glass dark:glass-dark border-destructive/20 shadow-destructive/10">
+          <DialogHeader>
+            <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
+              <AlertTriangle className="h-6 w-6 text-destructive" />
+            </div>
+            <DialogTitle className="text-center text-xl">Cannot Delete Category</DialogTitle>
+          </DialogHeader>
+          <div className="text-center py-4 text-muted-foreground leading-relaxed">
+            Categories cannot be deleted while they still contain notes. 
+            <br/><br/>
+            Please edit your notes to place them in a different category, or delete them first. Once empty, this category will automatically be cleared from your sidebar.
+          </div>
+          <DialogFooter className="sm:justify-center">
+            <Button onClick={() => setIsDeleteWarnOpen(false)} className="rounded-xl px-8" variant="outline">Understand</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
