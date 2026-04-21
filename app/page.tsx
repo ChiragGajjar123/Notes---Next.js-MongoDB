@@ -230,12 +230,12 @@ export default function Home() {
               </Button>
 
               <div className="relative group">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground transition-colors" />
                 <Input
                   placeholder="Search your notes..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 bg-background/50 border-border shadow-inner rounded-xl group-focus-within:ring-2 focus-visible:ring-primary/50 transition-all"
+                  className="w-full pl-10 bg-background/50 border-border shadow-inner rounded-xl transition-all"
                 />
               </div>
 

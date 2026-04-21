@@ -76,7 +76,7 @@ export function NoteCard({ note, onEdit, onDelete, onTogglePin, onToggleArchive 
       <div className="mt-auto pt-4 border-t border-border/40">
         <div className="flex flex-wrap justify-between items-end gap-4">
           <div className="flex flex-wrap gap-2">
-            {note.category && note.category !== 'all' && (
+            {note.category && (note.category as string) !== 'all' && (
               <span className="px-2.5 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-md uppercase tracking-wider">
                 {note.category}
               </span>

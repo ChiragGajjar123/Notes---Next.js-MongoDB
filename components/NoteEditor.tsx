@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Bold, Italic, List, ListOrdered, Quote, Redo, Undo, Palette, Tag, Folder } from 'lucide-react';
 import { Note } from '@/types';
 
@@ -81,21 +82,21 @@ export function NoteEditor({ isOpen, onClose, onSave, note }: NoteEditorProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl rounded-2xl p-0 overflow-hidden border border-border/80 shadow-2xl bg-card sm:max-h-[85vh] flex flex-col">
+      <DialogContent className="max-w-4xl rounded-2xl p-0 overflow-hidden border border-border/80 shadow-2xl bg-card sm:max-h-[85vh] flex flex-col gap-0 [&>button]:top-5 [&>button]:right-6">
         {/* Dynamic header accent line */}
         <div 
-          className="h-1.5 w-full bg-gradient-to-r from-primary to-primary/50" 
+          className="h-1.5 w-full bg-gradient-to-r from-primary to-primary/50 flex-shrink-0" 
           style={{ backgroundColor: color !== '#ffffff' && color !== '#000000' ? color : undefined }}
         />
         
-        <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6">
-          <DialogHeader className="mb-2">
-            <DialogTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground/80">
-              {note ? 'Edit Note' : 'Create New Note'}
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-6">
+        <DialogHeader className="px-8 py-3.5 border-b border-border/40 flex-shrink-0 bg-card">
+          <DialogTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground/80">
+            {note ? 'Edit Note' : 'Create New Note'}
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="flex-1 overflow-y-auto px-8 py-5 space-y-5">
+          <div className="space-y-5">
             {/* Title Input */}
             <div>
               <Input
@@ -103,27 +104,27 @@ export function NoteEditor({ isOpen, onClose, onSave, note }: NoteEditorProps) {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Give your note a title..."
-                className="text-3xl md:text-4xl font-extrabold bg-transparent border-none shadow-none focus-visible:ring-0 px-0 h-auto placeholder:text-muted-foreground/40 text-foreground"
+                className="text-3xl md:text-4xl font-extrabold leading-loose min-h-[50px] bg-transparent border-none shadow-none focus-visible:ring-0 px-0 h-auto pt-0 pb-2 placeholder:text-muted-foreground/40 text-foreground"
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-secondary/30 p-5 rounded-2xl border border-border/50">
               <div className="space-y-2">
-                <Label htmlFor="category" className="flex items-center text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                <Label htmlFor="category-select" className="flex items-center text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                   <Folder className="h-4 w-4 mr-1.5" /> Category
                 </Label>
-                <select
-                  id="category"
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value as Note['category'])}
-                  className="w-full rounded-xl border border-border/80 bg-background px-3 py-2.5 text-sm font-medium focus:ring-2 focus:ring-primary/40 focus:border-primary/60 outline-none transition-all shadow-sm"
-                >
-                  <option value="personal">Personal</option>
-                  <option value="work">Work</option>
-                  <option value="ideas">Ideas</option>
-                  <option value="tasks">Tasks</option>
-                  <option value="other">Other</option>
-                </select>
+                <Select value={category} onValueChange={(val) => setCategory(val as Note['category'])}>
+                  <SelectTrigger id="category-select" className="w-full bg-background rounded-xl border-border/80 py-2.5 h-[42px] font-medium transition-all outline-none border">
+                    <SelectValue placeholder="Select a category" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl border-border/80 shadow-lg bg-card/95 backdrop-blur-3xl animate-in fade-in-80 zoom-in-95">
+                    <SelectItem value="personal" className="rounded-lg">Personal</SelectItem>
+                    <SelectItem value="work" className="rounded-lg">Work</SelectItem>
+                    <SelectItem value="ideas" className="rounded-lg">Ideas</SelectItem>
+                    <SelectItem value="tasks" className="rounded-lg">Tasks</SelectItem>
+                    <SelectItem value="other" className="rounded-lg">Other</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
@@ -135,7 +136,7 @@ export function NoteEditor({ isOpen, onClose, onSave, note }: NoteEditorProps) {
                   value={tags}
                   onChange={(e) => setTags(e.target.value)}
                   placeholder="e.g. urgent, project, draft"
-                  className="rounded-xl border border-border/80 bg-background py-5 placeholder:text-muted-foreground/40 font-medium transition-all focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary/60 shadow-sm"
+                  className="rounded-xl border border-border/80 bg-background py-5 placeholder:text-muted-foreground/40 font-medium transition-all"
                 />
               </div>
               
@@ -143,8 +144,8 @@ export function NoteEditor({ isOpen, onClose, onSave, note }: NoteEditorProps) {
                 <Label htmlFor="color" className="flex items-center text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                   <Palette className="h-4 w-4 mr-1.5" /> Accent Color
                 </Label>
-                <div className="flex gap-3 h-10">
-                  <div className="relative group rounded-xl overflow-hidden shadow-sm flex-shrink-0 w-12 h-full border border-border/80">
+                <div className="flex gap-3 h-[42px]">
+                  <div className="relative group rounded-xl overflow-hidden shadow-sm flex-shrink-0 w-[42px] h-full border border-border/80">
                     <Input
                       id="color"
                       type="color"
@@ -161,7 +162,7 @@ export function NoteEditor({ isOpen, onClose, onSave, note }: NoteEditorProps) {
             </div>
 
             {/* Rich Text Editor */}
-            <div className="flex-1 flex flex-col group rounded-2xl border border-border/80 bg-background shadow-sm focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/50 transition-all overflow-hidden duration-300">
+            <div className="flex-1 flex flex-col group rounded-2xl border border-border/80 bg-background transition-all overflow-hidden duration-300">
               <div className="flex flex-wrap items-center gap-1.5 p-2 bg-secondary/40 border-b border-border/60 sticky top-0 z-10 transition-colors group-focus-within:bg-secondary/60">
                 <Button
                   variant="ghost"
@@ -237,7 +238,8 @@ export function NoteEditor({ isOpen, onClose, onSave, note }: NoteEditorProps) {
           </div>
         </div>
 
-        <div className="p-5 bg-card border-t border-border/80 flex justify-end gap-3 items-center">
+        {/* Fixed Footer */}
+        <div className="p-5 bg-card border-t border-border/80 flex justify-end gap-3 items-center flex-shrink-0">
           <Button variant="ghost" onClick={onClose} className="rounded-xl px-5 hover:bg-destructive/10 hover:text-destructive font-semibold">
             Cancel
           </Button>
