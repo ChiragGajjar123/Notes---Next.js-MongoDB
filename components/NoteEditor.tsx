@@ -7,7 +7,7 @@ import Placeholder from '@tiptap/extension-placeholder';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 
 import { Bold, Italic, List, ListOrdered, Quote, Redo, Undo, Palette, Tag, Folder, ChevronDown, Plus } from 'lucide-react';
 import { Note } from '@/types';
@@ -18,10 +18,9 @@ interface NoteEditorProps {
   onSave: (note: Partial<Note>) => void;
   note?: Note | null;
   existingCategories: string[];
-  onCreateCategory?: (name: string) => Promise<void>;
 }
 
-export function NoteEditor({ isOpen, onClose, onSave, note, existingCategories, onCreateCategory }: NoteEditorProps) {
+export function NoteEditor({ isOpen, onClose, onSave, note, existingCategories }: NoteEditorProps) {
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<Note['category']>('other');
   const [tags, setTags] = useState('');
@@ -57,12 +56,12 @@ export function NoteEditor({ isOpen, onClose, onSave, note, existingCategories, 
       setTimeout(() => editor?.commands.setContent(note.content), 0);
     } else {
       setTitle('');
-      setCategory('other');
+      setCategory(existingCategories.length > 0 ? existingCategories[0] : 'All');
       setTags('');
       setColor('#ffffff');
-      setTimeout(() => editor?.commands.setContent(''), 0);
+      setTimeout(() => editor?.commands.clearContent(), 0);
     }
-  }, [note, editor, isOpen]);
+  }, [note, isOpen, existingCategories, editor]);
 
   const handleSave = () => {
     if (!title.trim() || !editor) return;
@@ -98,6 +97,9 @@ export function NoteEditor({ isOpen, onClose, onSave, note, existingCategories, 
           <DialogTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground/80">
             {note ? 'Edit Note' : 'Create New Note'}
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Fill out the form below to save your note.
+          </DialogDescription>
         </DialogHeader>
         
         <div className="flex-1 overflow-y-auto px-8 py-5 space-y-5">
@@ -129,20 +131,18 @@ export function NoteEditor({ isOpen, onClose, onSave, note, existingCategories, 
                   <Input
                     id="category-input"
                     value={category}
-                    onChange={(e) => {
-                      setCategory(e.target.value);
-                      setIsCategoryDropdownOpen(true);
-                    }}
+                    readOnly
+                    onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
                     onFocus={() => setIsCategoryDropdownOpen(true)}
-                    placeholder="e.g. Finance, Goals..."
-                    className="w-full bg-background rounded-xl border border-border/80 h-[42px] font-medium transition-all pr-10"
+                    placeholder="Select category..."
+                    className="w-full bg-background rounded-xl border border-border/80 h-[42px] font-medium transition-all pr-10 cursor-pointer focus:ring-primary/20"
                     autoComplete="off"
                   />
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none opacity-50" />
                   
-                  {isCategoryDropdownOpen && existingCategories.length > 0 && (
+                  {isCategoryDropdownOpen && (
                     <div className="absolute z-50 w-full mt-2 bg-card border border-border/80 rounded-xl shadow-xl max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 flex flex-col">
-                      {existingCategories.map((cat) => (
+                      {Array.from(new Set(['All', ...existingCategories])).map((cat) => (
                         <div
                           key={cat}
                           className="px-4 py-3 hover:bg-primary/10 hover:text-primary cursor-pointer text-sm font-medium transition-colors border-b border-border/40 last:border-0"
@@ -155,20 +155,6 @@ export function NoteEditor({ isOpen, onClose, onSave, note, existingCategories, 
                           {cat}
                         </div>
                       ))}
-                      {category.trim() && !existingCategories.includes(category.trim()) && (
-                        <div 
-                          className="px-4 py-3 bg-secondary/20 hover:bg-primary/10 hover:text-primary text-primary/80 cursor-pointer text-sm font-bold transition-colors flex items-center border-t border-border/50 sticky bottom-0"
-                          onMouseDown={async (e) => {
-                            e.preventDefault();
-                            if (onCreateCategory) {
-                              await onCreateCategory(category.trim());
-                            }
-                            setIsCategoryDropdownOpen(false);
-                          }}
-                        >
-                          <Plus className="h-4 w-4 mr-2" /> Add &quot;{category.trim()}&quot;
-                        </div>
-                      )}
                     </div>
                   )}
                 </div>

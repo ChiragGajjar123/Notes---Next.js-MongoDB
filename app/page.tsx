@@ -34,11 +34,11 @@ export default function Home() {
   const [newCreatedCategory, setNewCreatedCategory] = useState('');
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
 
-  const categories = ['all', ...Array.from(new Set([...savedCategories, ...notes.map(n => n.category)])).filter(Boolean)];
+  const categories = ['all', ...Array.from(new Set([...savedCategories, ...notes.map(n => n.category)])).filter(c => c && c.toLowerCase() !== 'all')];
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('/api/categories?t=' + Date.now(), { 
+      const response = await fetch('/api/categories?t=' + Date.now(), {
         cache: 'no-store',
         headers: { 'Pragma': 'no-cache' }
       });
@@ -259,7 +259,7 @@ export default function Home() {
       {/* Abstract Background Decoration */}
       <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-primary/20 blur-3xl rounded-full pointer-events-none transition-all" />
       <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-primary/10 blur-3xl rounded-full pointer-events-none transition-all" />
-      
+
       <header className="sticky top-0 z-40 w-full glass dark:glass-dark border-b border-border/40 shadow-sm transition-all duration-300">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
@@ -267,7 +267,7 @@ export default function Home() {
               <div className="flex items-center gap-2">
                 <Sparkles className="h-6 w-6 text-primary animate-pulse" />
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                  Notes App
+                  Notes
                 </h1>
               </div>
               <div className="hidden md:flex items-center ml-6 gap-2">
@@ -282,7 +282,7 @@ export default function Home() {
                 </Button>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-4">
               <span className="text-sm font-medium text-muted-foreground hidden sm:block">
                 Welcome back, <span className="text-foreground">{session.user?.name}</span>
@@ -344,12 +344,12 @@ export default function Home() {
                         <FileText className={`h-4 w-4 mr-3 flex-shrink-0 ${selectedCategory === category ? 'text-primary' : 'text-muted-foreground'}`} />
                         <span className="truncate pr-10">{category}</span>
                       </Button>
-                      
+
                       {category !== 'all' && (
                         <div className="absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             className="h-7 w-7 rounded-lg hover:bg-background shadow-sm"
                             onClick={(e) => {
                               e.stopPropagation();
@@ -360,9 +360,9 @@ export default function Home() {
                           >
                             <Pencil className="h-3 w-3 text-muted-foreground" />
                           </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             className="h-7 w-7 rounded-lg hover:bg-destructive/10 hover:text-destructive shadow-sm"
                             onClick={(e) => {
                               e.stopPropagation();
@@ -395,7 +395,7 @@ export default function Home() {
                   {showArchived ? 'No archived notes' : 'No notes found'}
                 </h3>
                 <p className="text-muted-foreground max-w-sm mb-8 text-lg">
-                  {showArchived 
+                  {showArchived
                     ? 'Archive some notes to keep your workspace clean and organized.'
                     : 'Start capturing your ideas, tasks, and important thoughts today.'
                   }
@@ -432,21 +432,15 @@ export default function Home() {
         onSave={handleSaveNote}
         note={editingNote}
         existingCategories={categories.filter(c => c !== 'all')}
-        onCreateCategory={async (name) => {
-          setNewCreatedCategory(name);
-          await fetch('/api/categories', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: name.trim() })
-          });
-          fetchCategories();
-        }}
       />
-      
+
       <Dialog open={isCreateCategoryOpen} onOpenChange={setIsCreateCategoryOpen}>
         <DialogContent className="sm:max-w-[425px] rounded-2xl glass dark:glass-dark border-border/50">
           <DialogHeader>
             <DialogTitle>Create New Category</DialogTitle>
+            <DialogDescription className="sr-only">
+              Enter a name for your new persistent folder.
+            </DialogDescription>
           </DialogHeader>
           <div className="py-2">
             <Input
@@ -499,10 +493,13 @@ export default function Home() {
               <AlertTriangle className="h-6 w-6 text-destructive" />
             </div>
             <DialogTitle className="text-center text-xl">Cannot Delete Category</DialogTitle>
+            <DialogDescription className="sr-only">
+              Information about why this category cannot be deleted yet.
+            </DialogDescription>
           </DialogHeader>
           <div className="text-center py-4 text-muted-foreground leading-relaxed">
-            Categories cannot be deleted while they still contain notes. 
-            <br/><br/>
+            Categories cannot be deleted while they still contain notes.
+            <br /><br />
             Please edit your notes to place them in a different category, or delete them first. Once empty, this category will automatically be cleared from your sidebar.
           </div>
           <DialogFooter className="sm:justify-center">

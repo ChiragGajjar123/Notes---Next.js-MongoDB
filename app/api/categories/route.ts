@@ -32,6 +32,7 @@ export async function POST(request: NextRequest) {
       { $addToSet: { categories: name.trim() } },
       { new: true }
     );
+    if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
     return NextResponse.json({ success: true, categories: user.categories });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to create category' }, { status: 500 });
