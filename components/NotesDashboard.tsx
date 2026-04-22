@@ -312,12 +312,8 @@ export function NotesDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background relative overflow-x-hidden transition-colors duration-500">
-      {/* Abstract Background Decoration */}
-      <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-primary/20 blur-3xl rounded-full pointer-events-none transition-all" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-primary/10 blur-3xl rounded-full pointer-events-none transition-all" />
-
-      <header className="sticky top-0 z-40 w-full glass dark:glass-dark border-b border-border/40 shadow-sm transition-all duration-300">
+    <div className="min-h-screen bg-background relative transition-colors duration-500">
+      <header className="fixed inset-x-0 top-0 z-40 w-full glass dark:glass-dark border-b border-border/40 shadow-sm transition-all duration-300">
         <div className="container mx-auto px-3 sm:px-6 py-3 sm:py-4">
           <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
             <div className="flex min-w-0 flex-wrap items-center gap-2 sm:gap-3">
@@ -360,7 +356,7 @@ export function NotesDashboard() {
         </div>
       </header>
 
-      <main className="container mx-auto px-3 sm:px-6 py-4 sm:py-8 relative z-10">
+      <main className="container mx-auto px-3 sm:px-6 pb-4 pt-24 sm:pb-8 sm:pt-28 relative z-10">
         <div className="flex flex-col lg:flex-row gap-4 sm:gap-8">
           <aside className="lg:w-72 flex-shrink-0">
             <div className="sticky top-24 space-y-4 sm:top-28 sm:space-y-6 glass dark:glass-dark p-3 sm:p-6 rounded-xl sm:rounded-2xl shadow-sm border border-border/50">
@@ -402,7 +398,7 @@ export function NotesDashboard() {
                       </Button>
 
                       {category !== 'all' && (
-                        <div className="absolute right-1 sm:right-2 flex gap-0.5 sm:gap-1">
+                        <div className="absolute right-1 sm:right-2 flex gap-0.5 opacity-100 transition-opacity sm:gap-1 lg:opacity-0 lg:group-hover:opacity-100">
                           <Button
                             variant="ghost"
                             size="icon"
@@ -492,8 +488,8 @@ export function NotesDashboard() {
       />
 
       <Dialog open={isCreateCategoryOpen} onOpenChange={setIsCreateCategoryOpen}>
-        <DialogContent className="w-[calc(100vw-1rem)] sm:max-w-[425px] rounded-xl sm:rounded-2xl glass dark:glass-dark border-border/50 max-h-[92dvh] flex flex-col p-0 overflow-hidden">
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <DialogContent className="w-[92%] max-w-[425px] rounded-xl sm:rounded-2xl glass dark:glass-dark border-border/50 max-h-[92dvh] flex flex-col p-0 overflow-y-auto">
+          <div className="p-4 sm:p-6">
             <DialogHeader>
               <DialogTitle>Create New Category</DialogTitle>
               <DialogDescription>
@@ -520,8 +516,8 @@ export function NotesDashboard() {
       </Dialog>
 
       <Dialog open={isRenameOpen} onOpenChange={setIsRenameOpen}>
-        <DialogContent className="w-[calc(100vw-1rem)] sm:max-w-[425px] rounded-xl sm:rounded-2xl glass dark:glass-dark border-border/50 max-h-[92dvh] flex flex-col p-0 overflow-hidden">
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <DialogContent className="w-[92%] max-w-[425px] rounded-xl sm:rounded-2xl glass dark:glass-dark border-border/50 max-h-[92dvh] flex flex-col p-0 overflow-y-auto">
+          <div className="p-4 sm:p-6">
             <DialogHeader>
               <DialogTitle>Rename Category</DialogTitle>
               <DialogDescription>
@@ -548,8 +544,8 @@ export function NotesDashboard() {
       </Dialog>
 
       <Dialog open={isDeleteWarnOpen} onOpenChange={setIsDeleteWarnOpen}>
-        <DialogContent className="w-[calc(100vw-1rem)] sm:max-w-[425px] rounded-xl sm:rounded-2xl glass dark:glass-dark border-destructive/20 shadow-destructive/10 max-h-[92dvh] flex flex-col p-0 overflow-hidden">
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <DialogContent className="w-[92%] max-w-[425px] rounded-xl sm:rounded-2xl glass dark:glass-dark border-destructive/20 shadow-destructive/10 max-h-[92dvh] flex flex-col p-0 overflow-y-auto">
+          <div className="p-4 sm:p-6">
             <DialogHeader>
               <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
                 <AlertTriangle className="h-6 w-6 text-destructive" />
