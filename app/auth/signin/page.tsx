@@ -9,6 +9,10 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { LogIn, UserPlus } from 'lucide-react';
 
+const MIN_PASSWORD_LENGTH = 8;
+const MAX_NAME_LENGTH = 100;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function SignIn() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -20,19 +24,48 @@ export default function SignIn() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedName = name.trim();
+
+    if (!EMAIL_PATTERN.test(trimmedEmail)) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+
+    if (!password.trim()) {
+      setError('Please enter your password.');
+      return;
+    }
+
+    if (isSignUp && password.trim().length < MIN_PASSWORD_LENGTH) {
+      setError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters.`);
+      return;
+    }
+
+    if (isSignUp && (!trimmedName || trimmedName.toLowerCase() === 'undefined')) {
+      setError('Please enter your name.');
+      return;
+    }
+
+    if (isSignUp && trimmedName.length > MAX_NAME_LENGTH) {
+      setError(`Name must be ${MAX_NAME_LENGTH} characters or fewer.`);
+      return;
+    }
+
     setIsLoading(true);
     setError('');
 
     try {
       const result = await signIn('credentials', {
-        email,
+        email: trimmedEmail,
         password,
-        name: isSignUp ? name : undefined,
+        name: isSignUp ? trimmedName : '',
+        mode: isSignUp ? 'signup' : 'signin',
         redirect: false,
       });
 
       if (result?.error) {
-        setError('Invalid credentials');
+        setError(getAuthErrorMessage(result.error, isSignUp));
       } else {
         await getSession();
         router.push('/');
@@ -42,6 +75,18 @@ export default function SignIn() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const getAuthErrorMessage = (authError: string, signingUp: boolean) => {
+    if (authError.includes('Account already exists')) {
+      return 'An account with this email already exists. Please sign in.';
+    }
+
+    if (signingUp) {
+      return 'Could not create account. Please check your details.';
+    }
+
+    return 'Invalid email or password.';
   };
 
   return (
@@ -69,6 +114,8 @@ export default function SignIn() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Enter your name"
+                  autoComplete="name"
+                  maxLength={MAX_NAME_LENGTH}
                   required={isSignUp}
                 />
               </div>
@@ -82,6 +129,7 @@ export default function SignIn() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
+                autoComplete="email"
                 required
               />
             </div>
@@ -94,6 +142,8 @@ export default function SignIn() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
+                autoComplete={isSignUp ? 'new-password' : 'current-password'}
+                minLength={MIN_PASSWORD_LENGTH}
                 required
               />
             </div>
@@ -131,6 +181,7 @@ export default function SignIn() {
               onClick={() => {
                 setIsSignUp(!isSignUp);
                 setError('');
+                setPassword('');
               }}
               className="text-sm text-primary hover:underline"
             >
