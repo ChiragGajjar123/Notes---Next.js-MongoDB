@@ -39,8 +39,6 @@ const UserSchema = new mongoose.Schema({
   timestamps: true
 });
 
-UserSchema.index({ email: 1 });
-
 // Force schema recompilation for Next.js HMR
 delete mongoose.models.User;
 

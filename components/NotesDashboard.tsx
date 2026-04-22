@@ -33,7 +33,14 @@ export function NotesDashboard() {
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
 
-  const categories = ['all', ...Array.from(new Set([...savedCategories, ...notes.map(n => n.category)])).filter(c => c && c.toLowerCase() !== 'all')];
+  const categories = [
+    'all',
+    ...Array.from(new Set([...savedCategories, ...notes.map(n => n.category)]))
+      .filter(c => c && c.toLowerCase() !== 'all')
+  ];
+  const editorDefaultCategory = selectedCategory === 'all'
+    ? (categories.find(category => category !== 'all') || 'other')
+    : selectedCategory;
 
   const fetchCategories = async () => {
     try {
@@ -96,8 +103,6 @@ export function NotesDashboard() {
     try {
       const params = new URLSearchParams();
       if (showArchived) params.append('archived', 'true');
-      if (searchQuery) params.append('search', searchQuery);
-      if (selectedCategory !== 'all') params.append('category', selectedCategory);
       params.append('t', Date.now().toString());
 
       const response = await fetch(`/api/notes?${params}`, {
@@ -107,6 +112,7 @@ export function NotesDashboard() {
       if (response.ok) {
         const data = await response.json();
         setNotes(data);
+        setFilteredNotes(getFilteredNotes(data, searchQuery, selectedCategory));
       }
     } catch (error) {
       console.error('Error fetching notes:', error);
@@ -115,22 +121,27 @@ export function NotesDashboard() {
     }
   };
 
-  const filterNotes = () => {
-    let filtered = notes;
+  const getFilteredNotes = (sourceNotes: Note[], search: string, category: string) => {
+    let filtered = sourceNotes;
 
-    if (searchQuery) {
+    if (search) {
+      const normalizedSearch = search.toLowerCase();
       filtered = filtered.filter(note =>
-        note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        note.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        note.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+        note.title.toLowerCase().includes(normalizedSearch) ||
+        note.content.toLowerCase().includes(normalizedSearch) ||
+        note.tags.some(tag => tag.toLowerCase().includes(normalizedSearch))
       );
     }
 
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter(note => note.category === selectedCategory);
+    if (category !== 'all') {
+      filtered = filtered.filter(note => note.category === category);
     }
 
-    setFilteredNotes(filtered);
+    return filtered;
+  };
+
+  const filterNotes = () => {
+    setFilteredNotes(getFilteredNotes(notes, searchQuery, selectedCategory));
   };
 
   const handleRenameCategorySubmit = async () => {
@@ -158,16 +169,18 @@ export function NotesDashboard() {
   };
 
   const handleCreateCategorySubmit = async () => {
-    if (!newCreatedCategory.trim()) return;
+    const categoryName = newCreatedCategory.trim();
+    if (!categoryName) return;
     setIsCreatingCategory(true);
     try {
       const response = await fetch('/api/categories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newCreatedCategory.trim() })
+        body: JSON.stringify({ name: categoryName })
       });
       if (response.ok) {
         await fetchCategories();
+        setSelectedCategory(categoryName);
         setIsCreateCategoryOpen(false);
         setNewCreatedCategory('');
       }
@@ -211,11 +224,15 @@ export function NotesDashboard() {
         body: JSON.stringify(noteData),
       });
 
-      if (response.ok) {
-        fetchNotes();
+      if (!response.ok) {
+        throw new Error('Failed to save note');
       }
+
+      await fetchNotes();
+      await fetchCategories();
     } catch (error) {
       console.error('Error saving note:', error);
+      throw error;
     }
   };
 
@@ -288,18 +305,18 @@ export function NotesDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden transition-colors duration-500">
+    <div className="min-h-screen bg-background relative overflow-x-hidden transition-colors duration-500">
       {/* Abstract Background Decoration */}
       <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-primary/20 blur-3xl rounded-full pointer-events-none transition-all" />
       <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-primary/10 blur-3xl rounded-full pointer-events-none transition-all" />
 
       <header className="sticky top-0 z-40 w-full glass dark:glass-dark border-b border-border/40 shadow-sm transition-all duration-300">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-6 w-6 text-primary animate-pulse" />
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+        <div className="container mx-auto px-4 sm:px-6 py-4">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-primary animate-pulse" />
+                <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
                   Notes
                 </h1>
               </div>
@@ -316,7 +333,7 @@ export function NotesDashboard() {
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
               <span className="text-sm font-medium text-muted-foreground hidden sm:block">
                 Welcome back, <span className="text-foreground">{session.user?.name}</span>
               </span>
@@ -324,12 +341,12 @@ export function NotesDashboard() {
                 variant="ghost"
                 size="icon"
                 onClick={toggleDarkMode}
-                className="rounded-full hover:bg-muted/50 transition-all"
+                className="h-9 w-9 sm:h-10 sm:w-10 rounded-full hover:bg-muted/50 transition-all"
               >
-                {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                {isDarkMode ? <Sun className="h-4 w-4 sm:h-5 sm:w-5" /> : <Moon className="h-4 w-4 sm:h-5 sm:w-5" />}
               </Button>
-              <Button variant="outline" size="sm" onClick={() => signOut()} className="rounded-full hover:bg-destructive/10 hover:text-destructive border-transparent hover:border-destructive/30 transition-all">
-                <LogOut className="h-4 w-4 mr-2" />
+              <Button variant="outline" size="sm" onClick={() => signOut()} className="rounded-full h-9 sm:h-10 hover:bg-destructive/10 hover:text-destructive border-transparent hover:border-destructive/30 transition-all text-xs sm:text-sm">
+                <LogOut className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
                 Sign Out
               </Button>
             </div>
@@ -337,15 +354,15 @@ export function NotesDashboard() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 relative z-10">
-        <div className="flex flex-col lg:flex-row gap-8">
+      <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 relative z-10">
+        <div className="flex flex-col lg:flex-row gap-6 sm:gap-8">
           <aside className="lg:w-72 flex-shrink-0">
-            <div className="sticky top-28 space-y-6 glass dark:glass-dark p-6 rounded-2xl shadow-sm border border-border/50">
+            <div className="sticky top-28 space-y-5 sm:space-y-6 glass dark:glass-dark p-4 sm:p-6 rounded-2xl shadow-sm border border-border/50">
               <Button
                 onClick={handleCreateNote}
-                className="w-full h-12 text-base font-semibold rounded-xl shadow-lg hover:shadow-primary/25 hover:scale-[1.02] active:scale-[0.98] transition-all bg-primary text-primary-foreground"
+                className="w-full h-11 sm:h-12 text-sm sm:text-base font-semibold rounded-xl shadow-lg hover:shadow-primary/25 hover:scale-[1.02] active:scale-[0.98] transition-all bg-primary text-primary-foreground"
               >
-                <Plus className="h-5 w-5 mr-2" />
+                <Plus className="h-4.5 w-4.5 sm:h-5 sm:w-5 mr-2" />
                 Create New Note
               </Button>
 
@@ -355,13 +372,13 @@ export function NotesDashboard() {
                   placeholder="Search your notes..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 bg-background/50 border-border shadow-inner rounded-xl transition-all"
+                  className="w-full pl-9 sm:pl-10 bg-background/50 border-border shadow-inner rounded-xl transition-all h-10 sm:h-11 text-sm sm:text-base"
                 />
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-3 px-2">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Folders</h3>
+                <div className="flex items-center justify-between mb-3 px-1 sm:px-2">
+                  <h3 className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground">Folders</h3>
                   <Button variant="ghost" size="icon" className="h-6 w-6 rounded-md hover:bg-primary/20 hover:text-primary transition-colors" onClick={() => setIsCreateCategoryOpen(true)}>
                     <Plus className="h-3.5 w-3.5" />
                   </Button>
@@ -371,19 +388,19 @@ export function NotesDashboard() {
                     <div key={category} className="group relative flex items-center">
                       <Button
                         variant={selectedCategory === category ? 'secondary' : 'ghost'}
-                        className={`flex-1 justify-start capitalize rounded-xl transition-all ${selectedCategory === category ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:bg-muted/50'}`}
+                        className={`flex-1 justify-start capitalize rounded-xl transition-all h-9 sm:h-10 text-xs sm:text-sm ${selectedCategory === category ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:bg-muted/50'}`}
                         onClick={() => setSelectedCategory(category)}
                       >
-                        <FileText className={`h-4 w-4 mr-3 flex-shrink-0 ${selectedCategory === category ? 'text-primary' : 'text-muted-foreground'}`} />
-                        <span className="truncate pr-10">{category}</span>
+                        <FileText className={`h-3.5 w-3.5 sm:h-4 sm:w-4 mr-2 sm:mr-3 flex-shrink-0 ${selectedCategory === category ? 'text-primary' : 'text-muted-foreground'}`} />
+                        <span className="truncate pr-8 sm:pr-10">{category}</span>
                       </Button>
 
                       {category !== 'all' && (
-                        <div className="absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                        <div className="absolute right-1 sm:right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-0.5 sm:gap-1">
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 rounded-lg hover:bg-background shadow-sm"
+                            className="h-6 w-6 sm:h-7 sm:w-7 rounded-lg hover:bg-background shadow-sm"
                             onClick={(e) => {
                               e.stopPropagation();
                               setCategoryToRename(category);
@@ -391,12 +408,12 @@ export function NotesDashboard() {
                               setIsRenameOpen(true);
                             }}
                           >
-                            <Pencil className="h-3 w-3 text-muted-foreground" />
+                            <Pencil className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-muted-foreground" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 rounded-lg hover:bg-destructive/10 hover:text-destructive shadow-sm"
+                            className="h-6 w-6 sm:h-7 sm:w-7 rounded-lg hover:bg-destructive/10 hover:text-destructive shadow-sm"
                             onClick={(e) => {
                               e.stopPropagation();
                               const hasNotes = notes.some(n => n.category === category);
@@ -407,7 +424,7 @@ export function NotesDashboard() {
                               }
                             }}
                           >
-                            <Trash2 className="h-3 w-3" />
+                            <Trash2 className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                           </Button>
                         </div>
                       )}
@@ -420,28 +437,28 @@ export function NotesDashboard() {
 
           <div className="flex-1">
             {filteredNotes.length === 0 ? (
-              <div className="flex flex-col items-center justify-center p-12 glass dark:glass-dark rounded-3xl border border-border/50 text-center animate-in fade-in zoom-in duration-500">
-                <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mb-6">
-                  <FileText className="h-10 w-10 text-primary" />
+              <div className="flex flex-col items-center justify-center p-8 sm:p-12 glass dark:glass-dark rounded-3xl border border-border/50 text-center animate-in fade-in zoom-in duration-500">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 bg-primary/10 rounded-full flex items-center justify-center mb-5 sm:mb-6">
+                  <FileText className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
                 </div>
-                <h3 className="text-2xl font-bold text-foreground mb-3">
+                <h3 className="text-xl sm:text-2xl font-bold text-foreground mb-2 sm:mb-3">
                   {showArchived ? 'No archived notes' : 'No notes found'}
                 </h3>
-                <p className="text-muted-foreground max-w-sm mb-8 text-lg">
+                <p className="text-muted-foreground max-w-sm mb-6 sm:mb-8 text-base sm:text-lg">
                   {showArchived
                     ? 'Archive some notes to keep your workspace clean and organized.'
                     : 'Start capturing your ideas, tasks, and important thoughts today.'
                   }
                 </p>
                 {!showArchived && (
-                  <Button onClick={handleCreateNote} size="lg" className="rounded-xl shadow-lg hover:shadow-primary/25 hover:scale-105 transition-all">
-                    <Plus className="h-5 w-5 mr-2" />
+                  <Button onClick={handleCreateNote} size="lg" className="h-11 sm:h-12 rounded-xl shadow-lg hover:shadow-primary/25 hover:scale-105 transition-all text-sm sm:text-base px-5 sm:px-6">
+                    <Plus className="h-4.5 w-4.5 sm:h-5 sm:w-5 mr-2" />
                     Write your first note
                   </Button>
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-5 sm:gap-6">
                 {filteredNotes.map((note) => (
                   <div key={note._id} className="animate-in fade-in zoom-in duration-300">
                     <NoteCard
@@ -465,52 +482,57 @@ export function NotesDashboard() {
         onSave={handleSaveNote}
         note={editingNote}
         existingCategories={categories.filter(c => c !== 'all')}
+        defaultCategory={editorDefaultCategory}
       />
 
       <Dialog open={isCreateCategoryOpen} onOpenChange={setIsCreateCategoryOpen}>
-        <DialogContent className="sm:max-w-[425px] rounded-2xl glass dark:glass-dark border-border/50">
-          <DialogHeader>
-            <DialogTitle>Create New Category</DialogTitle>
-            <DialogDescription className="sr-only">
-              Enter a name for your new persistent folder.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-2">
-            <Input
-              value={newCreatedCategory}
-              onChange={(e) => setNewCreatedCategory(e.target.value)}
-              placeholder="e.g. Brainstorms, Finance"
-              className="rounded-xl border-border/80 bg-background/50 h-11"
-              autoFocus
-            />
+        <DialogContent className="w-[90vw] sm:max-w-[425px] rounded-2xl glass dark:glass-dark border-border/50 max-h-[90vh] flex flex-col p-0 overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+            <DialogHeader>
+              <DialogTitle>Create New Category</DialogTitle>
+              <DialogDescription>
+                Add a new folder to organize your notes. You can drag and drop notes into this folder later.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <Input
+                value={newCreatedCategory}
+                onChange={(e) => setNewCreatedCategory(e.target.value)}
+                placeholder="e.g. Work, Personal, Ideas"
+                className="rounded-xl border-border/80 bg-background/50 h-11"
+                autoFocus
+              />
+            </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="p-4 sm:p-6 pt-0 border-t border-border/10 bg-muted/5">
             <Button variant="ghost" onClick={() => setIsCreateCategoryOpen(false)} className="rounded-xl" disabled={isCreatingCategory}>Cancel</Button>
             <Button onClick={handleCreateCategorySubmit} className="rounded-xl font-bold shadow-md shadow-primary/20" disabled={isCreatingCategory || !newCreatedCategory.trim()}>
-              {isCreatingCategory ? 'Adding...' : 'Add Category'}
+              {isCreatingCategory ? 'Creating...' : 'Create Folder'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <Dialog open={isRenameOpen} onOpenChange={setIsRenameOpen}>
-        <DialogContent className="sm:max-w-[425px] rounded-2xl glass dark:glass-dark border-border/50">
-          <DialogHeader>
-            <DialogTitle>Rename Category</DialogTitle>
-            <DialogDescription>
-              This will update the category string internally for all notes currently inside this folder.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-2">
-            <Input
-              value={newCategoryName}
-              onChange={(e) => setNewCategoryName(e.target.value)}
-              placeholder="e.g. Project Specs"
-              className="rounded-xl border-border/80 bg-background/50 h-11"
-              autoFocus
-            />
+        <DialogContent className="w-[90vw] sm:max-w-[425px] rounded-2xl glass dark:glass-dark border-border/50 max-h-[90vh] flex flex-col p-0 overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+            <DialogHeader>
+              <DialogTitle>Rename Category</DialogTitle>
+              <DialogDescription>
+                This will update the category string internally for all notes currently inside this folder.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-2">
+              <Input
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                placeholder="e.g. Project Specs"
+                className="rounded-xl border-border/80 bg-background/50 h-11"
+                autoFocus
+              />
+            </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="p-4 sm:p-6 pt-0 border-t border-border/10 bg-muted/5">
             <Button variant="ghost" onClick={() => setIsRenameOpen(false)} className="rounded-xl" disabled={isRenaming}>Cancel</Button>
             <Button onClick={handleRenameCategorySubmit} className="rounded-xl font-bold shadow-md shadow-primary/20" disabled={isRenaming || !newCategoryName.trim()}>
               {isRenaming ? 'Saving...' : 'Save Category'}
@@ -520,22 +542,24 @@ export function NotesDashboard() {
       </Dialog>
 
       <Dialog open={isDeleteWarnOpen} onOpenChange={setIsDeleteWarnOpen}>
-        <DialogContent className="sm:max-w-[425px] rounded-2xl glass dark:glass-dark border-destructive/20 shadow-destructive/10">
-          <DialogHeader>
-            <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
-              <AlertTriangle className="h-6 w-6 text-destructive" />
+        <DialogContent className="w-[90vw] sm:max-w-[425px] rounded-2xl glass dark:glass-dark border-destructive/20 shadow-destructive/10 max-h-[90vh] flex flex-col p-0 overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+            <DialogHeader>
+              <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
+                <AlertTriangle className="h-6 w-6 text-destructive" />
+              </div>
+              <DialogTitle className="text-center text-xl">Cannot Delete Category</DialogTitle>
+              <DialogDescription className="sr-only">
+                Information about why this category cannot be deleted yet.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="text-center py-4 text-muted-foreground leading-relaxed">
+              Categories cannot be deleted while they still contain notes.
+              <br /><br />
+              Please edit your notes to place them in a different category, or delete them first. Once empty, this category will automatically be cleared from your sidebar.
             </div>
-            <DialogTitle className="text-center text-xl">Cannot Delete Category</DialogTitle>
-            <DialogDescription className="sr-only">
-              Information about why this category cannot be deleted yet.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="text-center py-4 text-muted-foreground leading-relaxed">
-            Categories cannot be deleted while they still contain notes.
-            <br /><br />
-            Please edit your notes to place them in a different category, or delete them first. Once empty, this category will automatically be cleared from your sidebar.
           </div>
-          <DialogFooter className="sm:justify-center">
+          <DialogFooter className="sm:justify-center p-4 sm:p-6 pt-0 border-t border-border/10 bg-muted/5">
             <Button onClick={() => setIsDeleteWarnOpen(false)} className="rounded-xl px-8" variant="outline">Understand</Button>
           </DialogFooter>
         </DialogContent>

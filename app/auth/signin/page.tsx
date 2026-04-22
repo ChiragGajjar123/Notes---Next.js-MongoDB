@@ -45,20 +45,20 @@ export default function SignIn() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-6">
+      <Card className="w-full max-w-md shadow-xl border-border/50">
+        <CardHeader className="text-center space-y-2 px-4 sm:px-6">
+          <CardTitle className="text-2xl font-bold tracking-tight">
             {isSignUp ? 'Create Account' : 'Sign In'}
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-sm">
             {isSignUp 
               ? 'Create a new account to start taking notes'
               : 'Sign in to your account to access your notes'
             }
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-4 sm:px-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             {isSignUp && (
               <div>
