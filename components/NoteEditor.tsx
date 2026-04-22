@@ -95,14 +95,13 @@ export function NoteEditor({ isOpen, onClose, onSave, note, existingCategories, 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[95vw] sm:max-w-4xl rounded-2xl p-0 overflow-hidden border border-border/80 shadow-2xl bg-card max-h-[90vh] sm:max-h-[85vh] flex flex-col gap-0 [&>button]:top-4 sm:[&>button]:top-[38px] [&>button]:right-4 sm:[&>button]:right-6 [&>button]:z-[60]">
-        <DialogHeader className="sticky top-0 z-20 px-4 sm:px-8 pt-0 pb-3 sm:pb-4 border-b border-border/40 flex-shrink-0 bg-card/95 backdrop-blur-md overflow-hidden">
-          {/* Dynamic header accent line - Now part of the sticky header */}
-          <div 
-            className="h-1.5 w-[calc(100%+2rem)] sm:w-[calc(100%+4rem)] bg-gradient-to-r from-primary to-primary/50 flex-shrink-0 mb-3 sm:mb-4 -mx-4 sm:-mx-8" 
-            style={{ backgroundColor: color !== '#ffffff' && color !== '#000000' ? color : undefined }}
-          />
-          <DialogTitle className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-muted-foreground/80">
+      <DialogContent className="w-[calc(100vw-1rem)] sm:w-[95vw] sm:max-w-4xl rounded-xl sm:rounded-2xl p-0 overflow-hidden border border-border/80 shadow-2xl bg-card max-h-[96dvh] sm:max-h-[85vh] flex flex-col gap-0 [&>button]:top-2 sm:[&>button]:top-2 [&>button]:right-3 sm:[&>button]:right-5 [&>button]:z-[60]">
+        <div 
+          className="h-1.5 w-full flex-shrink-0 bg-gradient-to-r from-primary to-primary/50" 
+          style={{ backgroundColor: color !== '#ffffff' && color !== '#000000' ? color : undefined }}
+        />
+        <DialogHeader className="sticky top-0 z-20 px-3 pr-12 sm:px-8 sm:pr-16 py-3 sm:py-4 border-b border-border/40 flex-shrink-0 bg-card/95 backdrop-blur-md overflow-hidden">
+          <DialogTitle className="m-0 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-muted-foreground/80">
             {note ? 'Edit Note' : 'Create New Note'}
           </DialogTitle>
           <DialogDescription className="sr-only">
@@ -110,8 +109,8 @@ export function NoteEditor({ isOpen, onClose, onSave, note, existingCategories, 
           </DialogDescription>
         </DialogHeader>
         
-        <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6">
-          <div className="space-y-4 sm:space-y-6">
+        <div className="flex-1 overflow-y-auto px-3 sm:px-8 py-3 sm:py-5 space-y-3 sm:space-y-5">
+          <div className="space-y-3 sm:space-y-5">
             {/* Title Input */}
             <div>
               <Input
@@ -119,11 +118,11 @@ export function NoteEditor({ isOpen, onClose, onSave, note, existingCategories, 
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Give your note a title..."
-                className="text-2xl sm:text-3xl md:text-4xl font-extrabold leading-tight sm:leading-loose min-h-[40px] sm:min-h-[50px] bg-transparent border-none shadow-none focus-visible:ring-0 px-0 h-auto pt-0 pb-1 sm:pb-2 placeholder:text-muted-foreground/40 text-foreground"
+                className="text-xl sm:text-3xl md:text-4xl font-extrabold leading-tight min-h-[36px] sm:min-h-[44px] bg-transparent border-none shadow-none focus-visible:ring-0 px-0 h-auto py-0 placeholder:text-muted-foreground/40 text-foreground"
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 bg-secondary/30 p-4 sm:p-5 rounded-2xl border border-border/50">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-5 bg-secondary/30 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-border/50">
               <div className="space-y-1.5 sm:space-y-2">
                 <Label htmlFor="category-input" className="flex items-center text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1 sm:mb-2">
                   <Folder className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5" /> Category
@@ -185,7 +184,7 @@ export function NoteEditor({ isOpen, onClose, onSave, note, existingCategories, 
                 <Label htmlFor="color" className="flex items-center text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                   <Palette className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5" /> Accent Color
                 </Label>
-                <div className="flex gap-2 sm:gap-3 h-10 sm:h-[42px]">
+                <div className="flex min-w-0 gap-2 sm:gap-3 h-10 sm:h-[42px]">
                   <div className="relative group rounded-xl overflow-hidden shadow-sm flex-shrink-0 w-10 sm:w-[42px] h-full border border-border/80">
                     <Input
                       id="color"
@@ -195,7 +194,7 @@ export function NoteEditor({ isOpen, onClose, onSave, note, existingCategories, 
                       className="absolute -top-4 -left-4 w-20 h-20 cursor-pointer border-0"
                     />
                   </div>
-                  <div className="flex-1 rounded-xl border border-border/80 bg-background flex items-center justify-center font-mono text-xs sm:text-sm shadow-sm opacity-80 pointer-events-none">
+                  <div className="min-w-0 flex-1 rounded-xl border border-border/80 bg-background flex items-center justify-center font-mono text-[11px] sm:text-sm shadow-sm opacity-80 pointer-events-none">
                     {color.toUpperCase()}
                   </div>
                 </div>
@@ -249,7 +248,7 @@ export function NoteEditor({ isOpen, onClose, onSave, note, existingCategories, 
                   <Quote className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </Button>
                 
-                <div className="flex-1" />
+                <div className="min-w-2 flex-1 basis-full sm:basis-auto" />
                 
                 <Button
                   variant="ghost"
@@ -273,21 +272,21 @@ export function NoteEditor({ isOpen, onClose, onSave, note, existingCategories, 
               
               <EditorContent 
                 editor={editor} 
-                className="flex-1 bg-background p-3 sm:p-4 text-sm sm:text-base"
+                className="flex-1 bg-background text-sm sm:text-base"
               />
             </div>
           </div>
         </div>
 
         {/* Sticky Footer */}
-        <div className="sticky bottom-0 z-20 p-4 sm:p-5 bg-card/95 backdrop-blur-md border-t border-border/80 flex justify-end gap-2 sm:gap-3 items-center flex-shrink-0">
-          <Button variant="ghost" onClick={onClose} className="rounded-xl px-4 sm:px-5 hover:bg-destructive/10 hover:text-destructive font-semibold text-sm sm:text-base">
+        <div className="sticky bottom-0 z-20 p-3 sm:px-8 sm:py-4 bg-card/95 backdrop-blur-md border-t border-border/80 flex flex-col-reverse justify-end gap-2 sm:flex-row sm:gap-3 sm:items-center flex-shrink-0">
+          <Button variant="ghost" onClick={onClose} className="w-full rounded-xl px-4 sm:w-auto sm:px-5 hover:bg-destructive/10 hover:text-destructive font-semibold text-sm sm:text-base">
             Cancel
           </Button>
           <Button 
             onClick={handleSave} 
             disabled={!title.trim() || isSaving}
-            className="rounded-xl px-5 sm:px-6 font-bold shadow-md shadow-primary/20 hover:shadow-primary/40 transition-all hover:-translate-y-0.5 active:translate-y-0 text-sm sm:text-base"
+            className="w-full rounded-xl px-5 sm:w-auto sm:px-6 font-bold shadow-md shadow-primary/20 hover:shadow-primary/40 transition-all hover:-translate-y-0.5 active:translate-y-0 text-sm sm:text-base"
           >
             {isSaving ? 'Saving...' : note ? 'Save Changes' : 'Publish Note'}
           </Button>

@@ -318,42 +318,41 @@ export function NotesDashboard() {
       <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-primary/10 blur-3xl rounded-full pointer-events-none transition-all" />
 
       <header className="sticky top-0 z-40 w-full glass dark:glass-dark border-b border-border/40 shadow-sm transition-all duration-300">
-        <div className="container mx-auto px-4 sm:px-6 py-4">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-3">
+        <div className="container mx-auto px-3 sm:px-6 py-3 sm:py-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
+            <div className="flex min-w-0 flex-wrap items-center gap-2 sm:gap-3">
               <div className="flex items-center gap-1.5 sm:gap-2">
                 <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-primary animate-pulse" />
                 <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
                   Notes
                 </h1>
               </div>
-              <div className="hidden md:flex items-center ml-6 gap-2">
-                <Button
-                  variant={showArchived ? 'secondary' : 'ghost'}
-                  size="sm"
-                  onClick={() => setShowArchived(!showArchived)}
-                  className="rounded-full transition-all"
-                >
-                  <Archive className="h-4 w-4 mr-2" />
-                  {showArchived ? 'Active' : 'Archived'}
-                </Button>
-              </div>
+              <Button
+                variant={showArchived ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setShowArchived(!showArchived)}
+                aria-label={showArchived ? 'Show active notes' : 'Show archived notes'}
+                className="h-8 w-8 rounded-full px-0 text-xs transition-all sm:h-9 sm:w-auto sm:px-3 sm:text-sm"
+              >
+                <Archive className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4 sm:mr-2" />
+                <span className="hidden sm:inline">{showArchived ? 'Active' : 'Archived'}</span>
+              </Button>
             </div>
 
-            <div className="flex items-center gap-2 sm:gap-4">
-              <span className="text-sm font-medium text-muted-foreground hidden sm:block">
-                Welcome back, <span className="text-foreground">{session.user?.name}</span>
+            <div className="flex min-w-0 flex-1 items-center justify-end gap-1.5 sm:gap-3">
+              <span className="min-w-0 truncate text-xs font-medium text-muted-foreground sm:text-sm">
+                Hi, <span className="text-foreground">{session.user?.name}</span>
               </span>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={toggleDarkMode}
-                className="h-9 w-9 sm:h-10 sm:w-10 rounded-full hover:bg-muted/50 transition-all"
+                className="h-8 w-8 shrink-0 rounded-full hover:bg-muted/50 transition-all sm:h-10 sm:w-10"
               >
                 {isDarkMode ? <Sun className="h-4 w-4 sm:h-5 sm:w-5" /> : <Moon className="h-4 w-4 sm:h-5 sm:w-5" />}
               </Button>
-              <Button variant="outline" size="sm" onClick={() => signOut()} className="rounded-full h-9 sm:h-10 hover:bg-destructive/10 hover:text-destructive border-transparent hover:border-destructive/30 transition-all text-xs sm:text-sm">
-                <LogOut className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+              <Button variant="outline" size="sm" onClick={() => signOut()} className="h-8 shrink-0 rounded-full border-transparent px-2 text-xs transition-all hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 sm:h-10 sm:px-3 sm:text-sm">
+                <LogOut className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                 Sign Out
               </Button>
             </div>
@@ -361,10 +360,10 @@ export function NotesDashboard() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 relative z-10">
-        <div className="flex flex-col lg:flex-row gap-6 sm:gap-8">
+      <main className="container mx-auto px-3 sm:px-6 py-4 sm:py-8 relative z-10">
+        <div className="flex flex-col lg:flex-row gap-4 sm:gap-8">
           <aside className="lg:w-72 flex-shrink-0">
-            <div className="sticky top-28 space-y-5 sm:space-y-6 glass dark:glass-dark p-4 sm:p-6 rounded-2xl shadow-sm border border-border/50">
+            <div className="sticky top-24 space-y-4 sm:top-28 sm:space-y-6 glass dark:glass-dark p-3 sm:p-6 rounded-xl sm:rounded-2xl shadow-sm border border-border/50">
               <Button
                 onClick={handleCreateNote}
                 className="w-full h-11 sm:h-12 text-sm sm:text-base font-semibold rounded-xl shadow-lg hover:shadow-primary/25 hover:scale-[1.02] active:scale-[0.98] transition-all bg-primary text-primary-foreground"
@@ -403,7 +402,7 @@ export function NotesDashboard() {
                       </Button>
 
                       {category !== 'all' && (
-                        <div className="absolute right-1 sm:right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-0.5 sm:gap-1">
+                        <div className="absolute right-1 sm:right-2 flex gap-0.5 sm:gap-1">
                           <Button
                             variant="ghost"
                             size="icon"
@@ -444,8 +443,8 @@ export function NotesDashboard() {
 
           <div className="flex-1">
             {filteredNotes.length === 0 ? (
-              <div className="flex flex-col items-center justify-center p-8 sm:p-12 glass dark:glass-dark rounded-3xl border border-border/50 text-center animate-in fade-in zoom-in duration-500">
-                <div className="w-20 h-20 sm:w-24 sm:h-24 bg-primary/10 rounded-full flex items-center justify-center mb-5 sm:mb-6">
+              <div className="flex flex-col items-center justify-center p-5 sm:p-12 glass dark:glass-dark rounded-2xl sm:rounded-3xl border border-border/50 text-center animate-in fade-in zoom-in duration-500">
+                <div className="w-16 h-16 sm:w-24 sm:h-24 bg-primary/10 rounded-full flex items-center justify-center mb-4 sm:mb-6">
                   <FileText className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
                 </div>
                 <h3 className="text-xl sm:text-2xl font-bold text-foreground mb-2 sm:mb-3">
@@ -493,7 +492,7 @@ export function NotesDashboard() {
       />
 
       <Dialog open={isCreateCategoryOpen} onOpenChange={setIsCreateCategoryOpen}>
-        <DialogContent className="w-[90vw] sm:max-w-[425px] rounded-2xl glass dark:glass-dark border-border/50 max-h-[90vh] flex flex-col p-0 overflow-hidden">
+        <DialogContent className="w-[calc(100vw-1rem)] sm:max-w-[425px] rounded-xl sm:rounded-2xl glass dark:glass-dark border-border/50 max-h-[92dvh] flex flex-col p-0 overflow-hidden">
           <div className="flex-1 overflow-y-auto p-4 sm:p-6">
             <DialogHeader>
               <DialogTitle>Create New Category</DialogTitle>
@@ -511,9 +510,9 @@ export function NotesDashboard() {
               />
             </div>
           </div>
-          <DialogFooter className="p-4 sm:p-6 pt-0 border-t border-border/10 bg-muted/5">
-            <Button variant="ghost" onClick={() => setIsCreateCategoryOpen(false)} className="rounded-xl" disabled={isCreatingCategory}>Cancel</Button>
-            <Button onClick={handleCreateCategorySubmit} className="rounded-xl font-bold shadow-md shadow-primary/20" disabled={isCreatingCategory || !newCreatedCategory.trim()}>
+          <DialogFooter className="gap-2 p-4 sm:p-6 pt-0 border-t border-border/10 bg-muted/5">
+            <Button variant="ghost" onClick={() => setIsCreateCategoryOpen(false)} className="w-full rounded-xl sm:w-auto" disabled={isCreatingCategory}>Cancel</Button>
+            <Button onClick={handleCreateCategorySubmit} className="w-full rounded-xl font-bold shadow-md shadow-primary/20 sm:w-auto" disabled={isCreatingCategory || !newCreatedCategory.trim()}>
               {isCreatingCategory ? 'Creating...' : 'Create Folder'}
             </Button>
           </DialogFooter>
@@ -521,7 +520,7 @@ export function NotesDashboard() {
       </Dialog>
 
       <Dialog open={isRenameOpen} onOpenChange={setIsRenameOpen}>
-        <DialogContent className="w-[90vw] sm:max-w-[425px] rounded-2xl glass dark:glass-dark border-border/50 max-h-[90vh] flex flex-col p-0 overflow-hidden">
+        <DialogContent className="w-[calc(100vw-1rem)] sm:max-w-[425px] rounded-xl sm:rounded-2xl glass dark:glass-dark border-border/50 max-h-[92dvh] flex flex-col p-0 overflow-hidden">
           <div className="flex-1 overflow-y-auto p-4 sm:p-6">
             <DialogHeader>
               <DialogTitle>Rename Category</DialogTitle>
@@ -539,9 +538,9 @@ export function NotesDashboard() {
               />
             </div>
           </div>
-          <DialogFooter className="p-4 sm:p-6 pt-0 border-t border-border/10 bg-muted/5">
-            <Button variant="ghost" onClick={() => setIsRenameOpen(false)} className="rounded-xl" disabled={isRenaming}>Cancel</Button>
-            <Button onClick={handleRenameCategorySubmit} className="rounded-xl font-bold shadow-md shadow-primary/20" disabled={isRenaming || !newCategoryName.trim()}>
+          <DialogFooter className="gap-2 p-4 sm:p-6 pt-0 border-t border-border/10 bg-muted/5">
+            <Button variant="ghost" onClick={() => setIsRenameOpen(false)} className="w-full rounded-xl sm:w-auto" disabled={isRenaming}>Cancel</Button>
+            <Button onClick={handleRenameCategorySubmit} className="w-full rounded-xl font-bold shadow-md shadow-primary/20 sm:w-auto" disabled={isRenaming || !newCategoryName.trim()}>
               {isRenaming ? 'Saving...' : 'Save Category'}
             </Button>
           </DialogFooter>
@@ -549,7 +548,7 @@ export function NotesDashboard() {
       </Dialog>
 
       <Dialog open={isDeleteWarnOpen} onOpenChange={setIsDeleteWarnOpen}>
-        <DialogContent className="w-[90vw] sm:max-w-[425px] rounded-2xl glass dark:glass-dark border-destructive/20 shadow-destructive/10 max-h-[90vh] flex flex-col p-0 overflow-hidden">
+        <DialogContent className="w-[calc(100vw-1rem)] sm:max-w-[425px] rounded-xl sm:rounded-2xl glass dark:glass-dark border-destructive/20 shadow-destructive/10 max-h-[92dvh] flex flex-col p-0 overflow-hidden">
           <div className="flex-1 overflow-y-auto p-4 sm:p-6">
             <DialogHeader>
               <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
@@ -567,7 +566,7 @@ export function NotesDashboard() {
             </div>
           </div>
           <DialogFooter className="sm:justify-center p-4 sm:p-6 pt-0 border-t border-border/10 bg-muted/5">
-            <Button onClick={() => setIsDeleteWarnOpen(false)} className="rounded-xl px-8" variant="outline">Understand</Button>
+            <Button onClick={() => setIsDeleteWarnOpen(false)} className="w-full rounded-xl px-8 sm:w-auto" variant="outline">Understand</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

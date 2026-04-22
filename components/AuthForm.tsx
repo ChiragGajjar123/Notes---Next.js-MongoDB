@@ -90,10 +90,10 @@ export function AuthForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-6">
+    <div className="min-h-screen flex items-center justify-center bg-background px-3 py-4 sm:px-4 sm:py-6">
       <Card className="w-full max-w-md shadow-xl border-border/50">
-        <CardHeader className="text-center space-y-2 px-4 sm:px-6">
-          <CardTitle className="text-2xl font-bold tracking-tight">
+        <CardHeader className="text-center space-y-2 px-3 py-4 sm:px-6 sm:py-6">
+          <CardTitle className="text-xl sm:text-2xl font-bold tracking-tight">
             {isSignUp ? 'Create Account' : 'Sign In'}
           </CardTitle>
           <CardDescription className="text-sm">
@@ -103,8 +103,8 @@ export function AuthForm() {
             }
           </CardDescription>
         </CardHeader>
-        <CardContent className="px-4 sm:px-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
+        <CardContent className="px-3 pb-4 sm:px-6 sm:pb-6">
+          <form onSubmit={handleSubmit} className="space-y-3.5 sm:space-y-4">
             {isSignUp && (
               <div>
                 <Label htmlFor="name">Name</Label>
@@ -154,7 +154,7 @@ export function AuthForm() {
               </div>
             )}
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full min-h-10 whitespace-normal" disabled={isLoading}>
               {isLoading ? (
                 'Loading...'
               ) : (

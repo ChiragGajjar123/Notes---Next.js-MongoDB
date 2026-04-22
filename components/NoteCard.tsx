@@ -20,7 +20,7 @@ export function NoteCard({ note, onEdit, onDelete, onTogglePin, onToggleArchive 
 
   return (
     <Card 
-      className="p-4 sm:p-6 h-full flex flex-col group cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/10 border border-border/50 bg-card/80 backdrop-blur-xl dark:bg-card/40 overflow-hidden relative rounded-2xl"
+      className="p-3 sm:p-6 h-full flex flex-col group cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/10 border border-border/50 bg-card/80 backdrop-blur-xl dark:bg-card/40 overflow-hidden relative rounded-xl sm:rounded-2xl"
       onClick={() => onEdit(note)}
     >
       {/* Optional Note Color Accent */}
@@ -32,7 +32,7 @@ export function NoteCard({ note, onEdit, onDelete, onTogglePin, onToggleArchive 
       )}
 
       {/* Floating Actions (visible on hover) */}
-      <div className="absolute top-3 sm:top-4 right-3 sm:right-4 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 bg-background/80 backdrop-blur-md rounded-full shadow-sm p-1">
+      <div className="absolute top-2 right-2 sm:top-4 sm:right-4 flex gap-1 z-10 bg-background/80 backdrop-blur-md rounded-full shadow-sm p-1">
         <Button
           variant="ghost"
           size="icon"
@@ -57,26 +57,20 @@ export function NoteCard({ note, onEdit, onDelete, onTogglePin, onToggleArchive 
         </Button>
       </div>
 
-      {note.isPinned && (
-        <div className="absolute top-3 sm:top-4 right-3 sm:right-4 group-hover:opacity-0 transition-opacity duration-300">
-          <Pin className="h-4 w-4 sm:h-5 sm:w-5 text-primary fill-primary" />
-        </div>
-      )}
-
       <div className="flex-1">
-        <h3 className="font-bold text-lg sm:text-xl text-foreground mb-2 sm:mb-3 pr-8 line-clamp-2 leading-tight">
+        <h3 className="font-bold text-base sm:text-xl text-foreground mb-2 sm:mb-3 pr-20 sm:pr-8 line-clamp-2 leading-tight break-words">
           {note.title}
         </h3>
         
-        <p className="text-muted-foreground mb-4 sm:mb-6 line-clamp-3 text-xs sm:text-sm leading-relaxed">
+        <p className="text-muted-foreground mb-3 sm:mb-6 line-clamp-3 text-xs sm:text-sm leading-relaxed break-words">
           {plainTextContent || 'Empty note...'}
         </p>
       </div>
       
       <div className="mt-auto pt-3 sm:pt-4 border-t border-border/40">
-        <div className="flex flex-wrap justify-between items-end gap-3 sm:gap-4">
-          <div className="flex flex-wrap gap-1.5 sm:gap-2">
-            {note.category && (note.category as string) !== 'all' && (
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-between sm:items-end sm:gap-4">
+          <div className="flex min-w-0 flex-wrap gap-1.5 sm:gap-2">
+            {note.category && !['all', 'other'].includes((note.category as string).toLowerCase()) && (
               <span className="px-2 py-0.5 sm:px-2.5 sm:py-1 bg-primary/10 text-primary text-[10px] sm:text-xs font-semibold rounded-md uppercase tracking-wider">
                 {note.category}
               </span>
@@ -93,13 +87,13 @@ export function NoteCard({ note, onEdit, onDelete, onTogglePin, onToggleArchive 
             )}
           </div>
           
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            <div className="flex items-center text-[9px] sm:text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+          <div className="flex items-center justify-between gap-1.5 sm:gap-2">
+            <div className="flex min-w-0 items-center text-[9px] sm:text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
               <Calendar className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1 opacity-70" />
               {format(new Date(note.createdAt), 'MMM d, yyyy')}
             </div>
             
-            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ml-1 sm:ml-2">
+            <div className="flex shrink-0 gap-1 ml-1 sm:ml-2">
               <Button
                 variant="ghost"
                 size="icon"
