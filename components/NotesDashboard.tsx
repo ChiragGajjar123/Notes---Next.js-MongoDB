@@ -36,10 +36,11 @@ export function NotesDashboard() {
   const categories = [
     'all',
     ...Array.from(new Set([...savedCategories, ...notes.map(n => n.category)]))
-      .filter(c => c && c.toLowerCase() !== 'all')
+      .filter(c => c && !['all', 'other'].includes(c.toLowerCase()))
   ];
+  const editorCategories = savedCategories.filter(category => !['all', 'other'].includes(category.toLowerCase()));
   const editorDefaultCategory = selectedCategory === 'all'
-    ? (categories.find(category => category !== 'all') || 'other')
+    ? (editorCategories[0] || 'other')
     : selectedCategory;
 
   const fetchCategories = async () => {
@@ -89,6 +90,12 @@ export function NotesDashboard() {
   useEffect(() => {
     filterNotes();
   }, [notes, searchQuery, selectedCategory]);
+
+  useEffect(() => {
+    if (selectedCategory !== 'all' && !categories.includes(selectedCategory)) {
+      setSelectedCategory('all');
+    }
+  }, [categories, selectedCategory]);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -481,7 +488,7 @@ export function NotesDashboard() {
         onClose={() => setIsEditorOpen(false)}
         onSave={handleSaveNote}
         note={editingNote}
-        existingCategories={categories.filter(c => c !== 'all')}
+        existingCategories={editorCategories}
         defaultCategory={editorDefaultCategory}
       />
 

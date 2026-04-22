@@ -30,6 +30,8 @@ export function NoteEditor({ isOpen, onClose, onSave, note, existingCategories, 
   const [isSaving, setIsSaving] = useState(false);
 
   const [isMounted, setIsMounted] = useState(false);
+  const categoryOptions = existingCategories.length > 0 ? existingCategories : ['All'];
+  const displayedCategory = existingCategories.length === 0 && category === 'other' ? 'All' : category;
 
   useEffect(() => {
     setIsMounted(true);
@@ -71,7 +73,7 @@ export function NoteEditor({ isOpen, onClose, onSave, note, existingCategories, 
     const noteData: Partial<Note> = {
       title: title.trim(),
       content: editor.getHTML(),
-      category,
+      category: category === 'All' ? 'other' : category,
       tags: tags.split(',').map(tag => tag.trim()).filter(Boolean),
       color,
     };
@@ -136,7 +138,7 @@ export function NoteEditor({ isOpen, onClose, onSave, note, existingCategories, 
                 >
                   <Input
                     id="category-input"
-                    value={category}
+                    value={displayedCategory}
                     readOnly
                     onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
                     onFocus={() => setIsCategoryDropdownOpen(true)}
@@ -148,13 +150,13 @@ export function NoteEditor({ isOpen, onClose, onSave, note, existingCategories, 
                   
                   {isCategoryDropdownOpen && (
                     <div className="absolute z-50 w-full mt-2 bg-card border border-border/80 rounded-xl shadow-xl max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 flex flex-col">
-                      {Array.from(new Set(['other', ...existingCategories])).map((cat) => (
+                      {categoryOptions.map((cat) => (
                         <div
                           key={cat}
                           className="px-4 py-2.5 sm:py-3 hover:bg-primary/10 hover:text-primary cursor-pointer text-xs sm:text-sm font-medium transition-colors border-b border-border/40 last:border-0"
                           onMouseDown={(e) => {
                             e.preventDefault();
-                            setCategory(cat);
+                            setCategory(cat === 'All' ? 'other' : cat);
                             setIsCategoryDropdownOpen(false);
                           }}
                         >
