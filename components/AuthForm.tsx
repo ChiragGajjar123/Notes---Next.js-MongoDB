@@ -93,7 +93,7 @@ export function AuthForm() {
   return (
     <>
       <Header isAuthPage={true} />
-      <div className="min-h-screen flex items-start justify-center bg-background px-3 py-4 sm:px-4 sm:py-6 pt-12 sm:pt-24">
+      <div className="min-h-screen flex items-start justify-center bg-background px-3 py-4 sm:px-4 sm:py-6 pt-[12vh] sm:pt-[15vh]">
         <Card className="w-full max-w-md shadow-xl border-border/50">
           <CardHeader className="text-center space-y-2 px-3 py-4 sm:px-6 sm:py-6">
             <CardTitle className="text-xl sm:text-2xl font-bold tracking-tight">
