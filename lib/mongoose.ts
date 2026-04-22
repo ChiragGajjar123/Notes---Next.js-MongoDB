@@ -3,8 +3,12 @@ import mongoose from 'mongoose';
 let MONGODB_URI = process.env.MONGODB_URI;
 
 if (!MONGODB_URI) {
-  console.warn('MONGODB_URI not found, using default development URI');
-  MONGODB_URI = 'mongodb://localhost:27017/notes-app';
+  if (process.env.NODE_ENV === 'development') {
+    console.warn('MONGODB_URI not found, using default development URI');
+    MONGODB_URI = 'mongodb://localhost:27017/notes-app';
+  } else {
+    throw new Error('Please define the MONGODB_URI environment variable inside .env.local');
+  }
 }
 
 let cached = (global as any).mongoose;

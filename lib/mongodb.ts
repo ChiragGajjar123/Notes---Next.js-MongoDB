@@ -1,8 +1,12 @@
 import { MongoClient } from 'mongodb';
 
 if (!process.env.MONGODB_URI) {
-  console.warn('MONGODB_URI not found, using default development URI');
-  process.env.MONGODB_URI = 'mongodb://localhost:27017/notes-app';
+  if (process.env.NODE_ENV === 'development') {
+    console.warn('MONGODB_URI not found, using default development URI');
+    process.env.MONGODB_URI = 'mongodb://localhost:27017/notes-app';
+  } else {
+    throw new Error('Please define the MONGODB_URI environment variable inside .env.local');
+  }
 }
 
 const uri = process.env.MONGODB_URI;
