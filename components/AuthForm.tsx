@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogIn, UserPlus } from 'lucide-react';
+import { LogIn, UserPlus, Loader2 } from 'lucide-react';
 import { Header } from './Header';
 
 const MIN_PASSWORD_LENGTH = 8;
@@ -159,7 +159,10 @@ export function AuthForm() {
 
               <Button type="submit" className="w-full min-h-10 whitespace-normal" disabled={isLoading}>
                 {isLoading ? (
-                  'Loading...'
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Please wait...
+                  </>
                 ) : (
                   <>
                     {isSignUp ? (

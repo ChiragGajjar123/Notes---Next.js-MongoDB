@@ -2,7 +2,7 @@
 
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Pin, Archive, Trash2, Edit, Calendar } from 'lucide-react';
+import { Pin, Archive, Trash2, Edit, Calendar, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Note } from '@/types';
 
@@ -12,16 +12,29 @@ interface NoteCardProps {
   onDelete: (noteId: string) => void;
   onTogglePin: (noteId: string) => void;
   onToggleArchive: (noteId: string) => void;
+  isPinning?: boolean;
+  isArchiving?: boolean;
+  isDeleting?: boolean;
 }
 
-export function NoteCard({ note, onEdit, onDelete, onTogglePin, onToggleArchive }: NoteCardProps) {
+export function NoteCard({ 
+  note, 
+  onEdit, 
+  onDelete, 
+  onTogglePin, 
+  onToggleArchive,
+  isPinning = false,
+  isArchiving = false,
+  isDeleting = false
+}: NoteCardProps) {
   // Strip HTML tags for clean preview
   const plainTextContent = note.content.replace(/<[^>]+>/g, ' ');
+  const isDisabled = isPinning || isArchiving || isDeleting;
 
   return (
     <Card 
-      className="p-3 sm:p-6 h-full flex flex-col group cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/10 border border-border/50 bg-card/80 backdrop-blur-xl dark:bg-card/40 overflow-hidden relative rounded-xl sm:rounded-2xl"
-      onClick={() => onEdit(note)}
+      className={`p-3 sm:p-6 h-full flex flex-col group cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/10 border border-border/50 bg-card/80 backdrop-blur-xl dark:bg-card/40 overflow-hidden relative rounded-xl sm:rounded-2xl ${isDisabled ? 'opacity-70 pointer-events-none' : ''}`}
+      onClick={() => !isDisabled && onEdit(note)}
     >
       {/* Optional Note Color Accent */}
       {note.color && note.color !== '#ffffff' && note.color !== '#000000' && (
@@ -36,17 +49,23 @@ export function NoteCard({ note, onEdit, onDelete, onTogglePin, onToggleArchive 
         <Button
           variant="ghost"
           size="icon"
+          disabled={isDisabled}
           className="h-7 w-7 sm:h-8 sm:w-8 rounded-full hover:bg-primary/20 hover:text-primary transition-colors"
           onClick={(e) => {
             e.stopPropagation();
             onTogglePin(note._id);
           }}
         >
-          <Pin className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${note.isPinned ? 'fill-primary text-primary' : ''}`} />
+          {isPinning ? (
+            <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin text-primary" />
+          ) : (
+            <Pin className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${note.isPinned ? 'fill-primary text-primary' : ''}`} />
+          )}
         </Button>
         <Button
           variant="ghost"
           size="icon"
+          disabled={isDisabled}
           className="h-7 w-7 sm:h-8 sm:w-8 rounded-full hover:bg-primary/20 hover:text-primary transition-colors"
           onClick={(e) => {
             e.stopPropagation();
@@ -97,24 +116,34 @@ export function NoteCard({ note, onEdit, onDelete, onTogglePin, onToggleArchive 
               <Button
                 variant="ghost"
                 size="icon"
+                disabled={isDisabled}
                 className="h-6 w-6 sm:h-7 sm:w-7 rounded-md hover:bg-secondary transition-colors"
                 onClick={(e) => {
                   e.stopPropagation();
                   onToggleArchive(note._id);
                 }}
               >
-                <Archive className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-muted-foreground" />
+                {isArchiving ? (
+                  <Loader2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 animate-spin text-primary" />
+                ) : (
+                  <Archive className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-muted-foreground" />
+                )}
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
+                disabled={isDisabled}
                 className="h-6 w-6 sm:h-7 sm:w-7 rounded-md hover:bg-destructive/10 hover:text-destructive transition-colors"
                 onClick={(e) => {
                   e.stopPropagation();
                   onDelete(note._id);
                 }}
               >
-                <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                {isDeleting ? (
+                  <Loader2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 animate-spin text-destructive" />
+                ) : (
+                  <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                )}
               </Button>
             </div>
           </div>

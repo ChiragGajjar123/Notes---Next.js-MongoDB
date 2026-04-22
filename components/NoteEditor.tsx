@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 
-import { Bold, Italic, List, ListOrdered, Quote, Redo, Undo, Palette, Tag, Folder, ChevronDown } from 'lucide-react';
+import { Bold, Italic, List, ListOrdered, Quote, Redo, Undo, Palette, Tag, Folder, ChevronDown, Loader2 } from 'lucide-react';
 import { Note } from '@/types';
 
 interface NoteEditorProps {
@@ -288,7 +288,16 @@ export function NoteEditor({ isOpen, onClose, onSave, note, existingCategories, 
             disabled={!title.trim() || isSaving}
             className="w-full rounded-xl px-5 sm:w-auto sm:px-6 font-bold shadow-md shadow-primary/20 hover:shadow-primary/40 transition-all hover:-translate-y-0.5 active:translate-y-0 text-sm sm:text-base"
           >
-            {isSaving ? 'Saving...' : note ? 'Save Changes' : 'Publish Note'}
+            {isSaving ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : note ? (
+              'Save Changes'
+            ) : (
+              'Publish Note'
+            )}
           </Button>
         </div>
       </DialogContent>

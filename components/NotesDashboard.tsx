@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { NoteCard } from '@/components/NoteCard';
 import { NoteEditor } from '@/components/NoteEditor';
-import { Plus, Search, LogOut, Archive, FileText, Moon, Sun, Sparkles, Pencil, Trash2, AlertTriangle } from 'lucide-react';
+import { Plus, Search, LogOut, Archive, FileText, Moon, Sun, Sparkles, Pencil, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Note } from '@/types';
 import { Header } from '@/components/Header';
@@ -32,6 +32,11 @@ export function NotesDashboard() {
   const [isCreateCategoryOpen, setIsCreateCategoryOpen] = useState(false);
   const [newCreatedCategory, setNewCreatedCategory] = useState('');
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+  const [isDeletingNoteId, setIsDeletingNoteId] = useState<string | null>(null);
+  const [pinningNoteId, setPinningNoteId] = useState<string | null>(null);
+  const [archivingNoteId, setArchivingNoteId] = useState<string | null>(null);
+  const [deletingCategoryName, setDeletingCategoryName] = useState<string | null>(null);
+  const [isChangingTheme, setIsChangingTheme] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   const categories = [
@@ -200,13 +205,18 @@ export function NotesDashboard() {
   };
 
   const handleExecuteDeleteEmptyCategory = async (name: string) => {
+    setDeletingCategoryName(name);
     try {
       const response = await fetch(`/api/categories?name=${encodeURIComponent(name)}`, { method: 'DELETE' });
       if (response.ok) {
         await fetchCategories();
         await fetchNotes();
       }
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+      console.error(e); 
+    } finally {
+      setDeletingCategoryName(null);
+    }
   };
 
   const handleCreateNote = () => {
@@ -246,21 +256,25 @@ export function NotesDashboard() {
 
   const handleDeleteNote = async (noteId: string) => {
     if (confirm('Are you sure you want to delete this note?')) {
+      setIsDeletingNoteId(noteId);
       try {
         const response = await fetch(`/api/notes/${noteId}`, {
           method: 'DELETE',
         });
 
         if (response.ok) {
-          fetchNotes();
+          await fetchNotes();
         }
       } catch (error) {
         console.error('Error deleting note:', error);
+      } finally {
+        setIsDeletingNoteId(null);
       }
     }
   };
 
   const handleTogglePin = async (noteId: string) => {
+    setPinningNoteId(noteId);
     try {
       const note = notes.find(n => n._id === noteId);
       if (note) {
@@ -268,10 +282,13 @@ export function NotesDashboard() {
       }
     } catch (error) {
       console.error('Error toggling pin:', error);
+    } finally {
+      setPinningNoteId(null);
     }
   };
 
   const handleToggleArchive = async (noteId: string) => {
+    setArchivingNoteId(noteId);
     try {
       const note = notes.find(n => n._id === noteId);
       if (note) {
@@ -279,12 +296,15 @@ export function NotesDashboard() {
       }
     } catch (error) {
       console.error('Error toggling archive:', error);
+    } finally {
+      setArchivingNoteId(null);
     }
   };
 
   const toggleDarkMode = async () => {
     const newMode = !isDarkMode;
     setIsDarkMode(newMode);
+    setIsChangingTheme(true);
     
     try {
       await fetch('/api/user/settings', {
@@ -294,6 +314,8 @@ export function NotesDashboard() {
       });
     } catch (error) {
       console.error('Failed to save theme preference:', error);
+    } finally {
+      setIsChangingTheme(false);
     }
   };
 
@@ -319,6 +341,7 @@ export function NotesDashboard() {
         setShowArchived={setShowArchived}
         isDarkMode={isDarkMode}
         toggleDarkMode={toggleDarkMode}
+        isChangingTheme={isChangingTheme}
       />
 
       <main className="container mx-auto px-3 sm:px-6 pb-4 pt-24 sm:pb-8 sm:pt-28 relative z-10">
@@ -368,6 +391,7 @@ export function NotesDashboard() {
                             variant="ghost"
                             size="icon"
                             className="h-6 w-6 sm:h-7 sm:w-7 rounded-lg hover:bg-background shadow-sm"
+                            disabled={isRenaming && categoryToRename === category}
                             onClick={(e) => {
                               e.stopPropagation();
                               setCategoryToRename(category);
@@ -375,11 +399,16 @@ export function NotesDashboard() {
                               setIsRenameOpen(true);
                             }}
                           >
-                            <Pencil className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-muted-foreground" />
+                            {isRenaming && categoryToRename === category ? (
+                              <Loader2 className="h-2.5 w-2.5 sm:h-3 sm:w-3 animate-spin" />
+                            ) : (
+                              <Pencil className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-muted-foreground" />
+                            )}
                           </Button>
                           <Button
                             variant="ghost"
                             size="icon"
+                            disabled={deletingCategoryName === category}
                             className="h-6 w-6 sm:h-7 sm:w-7 rounded-lg hover:bg-destructive/10 hover:text-destructive shadow-sm"
                             onClick={(e) => {
                               e.stopPropagation();
@@ -391,7 +420,11 @@ export function NotesDashboard() {
                               }
                             }}
                           >
-                            <Trash2 className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                            {deletingCategoryName === category ? (
+                              <Loader2 className="h-2.5 w-2.5 sm:h-3 sm:w-3 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                            )}
                           </Button>
                         </div>
                       )}
@@ -434,6 +467,9 @@ export function NotesDashboard() {
                       onDelete={handleDeleteNote}
                       onTogglePin={handleTogglePin}
                       onToggleArchive={handleToggleArchive}
+                      isPinning={pinningNoteId === note._id}
+                      isArchiving={archivingNoteId === note._id}
+                      isDeleting={isDeletingNoteId === note._id}
                     />
                   </div>
                 ))}

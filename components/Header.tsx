@@ -1,6 +1,7 @@
 'use client';
 
-import { Sparkles, Archive, Sun, Moon, LogOut } from 'lucide-react';
+import { useState } from 'react';
+import { Sparkles, Archive, Sun, Moon, LogOut, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSession, signOut } from 'next-auth/react';
 
@@ -10,6 +11,7 @@ interface HeaderProps {
   setShowArchived?: (show: boolean) => void;
   isDarkMode?: boolean;
   toggleDarkMode?: () => void;
+  isChangingTheme?: boolean;
 }
 
 export function Header({
@@ -18,8 +20,20 @@ export function Header({
   setShowArchived,
   isDarkMode,
   toggleDarkMode,
+  isChangingTheme = false,
 }: HeaderProps) {
   const { data: session } = useSession();
+  const [isSigningOut, setIsSigningOut] = useState(false);
+
+  const handleSignOut = async () => {
+    setIsSigningOut(true);
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Sign out error:', error);
+      setIsSigningOut(false);
+    }
+  };
 
   return (
     <header className="fixed inset-x-0 top-0 z-40 w-full bg-background/60 backdrop-blur-xl border-b border-border/40 shadow-sm transition-all duration-300">
@@ -55,15 +69,32 @@ export function Header({
                 <Button
                   variant="ghost"
                   size="icon"
+                  disabled={isChangingTheme || isSigningOut}
                   onClick={toggleDarkMode}
                   className="h-8 w-8 shrink-0 rounded-full hover:bg-muted/50 transition-all sm:h-10 sm:w-10"
                 >
-                  {isDarkMode ? <Sun className="h-4 w-4 sm:h-5 sm:w-5" /> : <Moon className="h-4 w-4 sm:h-5 sm:w-5" />}
+                  {isChangingTheme ? (
+                    <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
+                  ) : isDarkMode ? (
+                    <Sun className="h-4 w-4 sm:h-5 sm:w-5" />
+                  ) : (
+                    <Moon className="h-4 w-4 sm:h-5 sm:w-5" />
+                  )}
                 </Button>
               )}
-              <Button variant="outline" size="sm" onClick={() => signOut()} className="h-8 shrink-0 rounded-full border-transparent px-2 text-xs transition-all hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 sm:h-10 sm:px-3 sm:text-sm">
-                <LogOut className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                Sign Out
+              <Button 
+                variant="outline" 
+                size="sm" 
+                disabled={isChangingTheme || isSigningOut}
+                onClick={handleSignOut}
+                className="h-8 shrink-0 rounded-full border-transparent px-2 text-xs transition-all hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 sm:h-10 sm:px-3 sm:text-sm"
+              >
+                {isSigningOut ? (
+                  <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin mr-1 sm:mr-2" />
+                ) : (
+                  <LogOut className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                )}
+                {isSigningOut ? 'Signing out...' : 'Sign Out'}
               </Button>
             </div>
           )}
