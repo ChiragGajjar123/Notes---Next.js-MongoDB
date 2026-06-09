@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { signIn, getSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -50,6 +50,11 @@ export function AuthForm() {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+
+  // Prefetch the dashboard resources to eliminate lag after successful login
+  useEffect(() => {
+    router.prefetch('/');
+  }, [router]);
 
   const passwordStrength = useMemo(
     () => getPasswordStrength(password),
@@ -110,13 +115,13 @@ export function AuthForm() {
 
       if (result?.error) {
         setError(getAuthErrorMessage(result.error, isSignUp));
+        setIsLoading(false);
       } else {
         await getSession();
         router.push('/');
       }
     } catch (error) {
       setError('An unexpected error occurred. Please try again.');
-    } finally {
       setIsLoading(false);
     }
   };

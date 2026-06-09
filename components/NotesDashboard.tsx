@@ -5,11 +5,15 @@ import { useSession, signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { NoteCard } from '@/components/NoteCard';
-import { NoteEditor } from '@/components/NoteEditor';
+import dynamic from 'next/dynamic';
 import { Plus, Search, LogOut, Archive, FileText, Moon, Sun, Sparkles, Pencil, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Note } from '@/types';
 import { Header } from '@/components/Header';
+
+const NoteEditor = dynamic(() => import('@/components/NoteEditor').then(mod => mod.NoteEditor), {
+  ssr: false
+});
 
 export function NotesDashboard() {
   const { data: session, status } = useSession();
