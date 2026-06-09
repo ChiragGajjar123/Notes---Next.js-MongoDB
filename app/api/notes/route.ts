@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongoose';
 import Note from '@/lib/models/Note';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]/route';
+import { requireAuth, enforceApiRateLimit } from '@/lib/auth-helpers';
+import { createNoteSchema } from '@/lib/validations';
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const { session, response } = await requireAuth();
+    if (response) return response;
+
+    const rateLimitResponse = await enforceApiRateLimit(request, session.user.id);
+    if (rateLimitResponse) return rateLimitResponse;
 
     await connectDB();
 
@@ -18,7 +19,10 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const isArchived = searchParams.get('archived') === 'true';
 
-    let query: any = { userId: session.user.id, isArchived };
+    const query: Record<string, unknown> = {
+      userId: session.user.id,
+      isArchived,
+    };
 
     if (category && category !== 'all') {
       query.category = category;
@@ -35,38 +39,51 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(notes);
   } catch (error) {
     console.error('Error fetching notes:', error);
-    return NextResponse.json({ error: 'Failed to fetch notes' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to fetch notes' },
+      { status: 500 }
+    );
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const { session, response } = await requireAuth();
+    if (response) return response;
+
+    const rateLimitResponse = await enforceApiRateLimit(request, session.user.id);
+    if (rateLimitResponse) return rateLimitResponse;
 
     await connectDB();
 
     const body = await request.json();
-    const { title, content, category, tags, color } = body;
+    const validation = createNoteSchema.safeParse(body);
 
-    if (!title?.trim()) {
-      return NextResponse.json({ error: 'Title is required' }, { status: 400 });
+    if (!validation.success) {
+      const errors = validation.error.issues.map((e: { message: string }) => e.message);
+      return NextResponse.json(
+        { error: errors[0], errors },
+        { status: 400 }
+      );
     }
 
+    const { title, content, category, tags, color } = validation.data;
+
     const note = await Note.create({
-      title: title.trim(),
-      content: content || '',
-      category: category || 'other',
-      tags: tags || [],
-      color: color || '#ffffff',
+      title,
+      content,
+      category,
+      tags,
+      color,
       userId: session.user.id,
     });
 
     return NextResponse.json(note, { status: 201 });
   } catch (error) {
     console.error('Error creating note:', error);
-    return NextResponse.json({ error: 'Failed to create note' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to create note' },
+      { status: 500 }
+    );
   }
 }

@@ -16,7 +16,8 @@ const UserSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: false
+    required: false,
+    select: false // Don't include password in queries by default
   },
   image: {
     type: String,
@@ -34,6 +35,25 @@ const UserSchema = new mongoose.Schema({
     type: String,
     enum: ['light', 'dark'],
     default: 'light'
+  },
+  // ── Security Fields ──────────────────────────────────
+  failedLoginAttempts: {
+    type: Number,
+    default: 0,
+    select: false // Don't expose in normal queries
+  },
+  lockedUntil: {
+    type: Date,
+    default: null,
+    select: false // Don't expose in normal queries
+  },
+  lastLoginAt: {
+    type: Date,
+    default: null
+  },
+  passwordChangedAt: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true
