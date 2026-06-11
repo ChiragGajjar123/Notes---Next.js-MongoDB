@@ -171,131 +171,135 @@ export function NoteEditor({ isOpen, onClose, onSave, note, existingCategories, 
             </div>
 
             {/* Note Meta Settings Panel */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 bg-secondary/20 p-4 sm:p-5 rounded-2xl border border-border/50">
-              <div className="space-y-1.5">
-                <Label htmlFor="category-input" className="flex items-center text-xs font-bold text-muted-foreground/80 uppercase tracking-wider pl-1">
-                  <Folder className="h-3.5 w-3.5 mr-2 text-primary" /> Category
-                </Label>
-                <div 
-                  className="relative group" 
-                  onBlur={(e) => {
-                    if (!e.currentTarget.contains(e.relatedTarget)) {
-                      setIsCategoryDropdownOpen(false);
-                    }
-                  }}
-                >
-                  <Input
-                    id="category-input"
-                    value={displayedCategory}
-                    readOnly
-                    onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
-                    onFocus={() => setIsCategoryDropdownOpen(true)}
-                    placeholder="Select category..."
-                    className="w-full bg-background rounded-xl border border-border/80 h-10 sm:h-11 text-sm sm:text-base font-semibold transition-all pr-10 cursor-pointer focus:ring-primary/25"
-                    autoComplete="off"
-                  />
-                  <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none opacity-50 transition-transform group-focus-within:rotate-180" />
-                  
-                  {isCategoryDropdownOpen && (
-                    <div className="absolute z-50 w-full mt-2 bg-card border border-border/80 rounded-xl shadow-xl max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 flex flex-col">
-                      {categoryOptions.map((cat) => (
-                        <button
-                          type="button"
-                          key={cat}
-                          className="px-4 py-3 text-left hover:bg-primary/10 hover:text-primary cursor-pointer text-xs sm:text-sm font-semibold transition-colors border-b border-border/40 last:border-0"
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            setCategory(cat === 'All' ? 'other' : cat);
-                            setIsCategoryDropdownOpen(false);
-                          }}
+            <div className="space-y-4 sm:space-y-5 bg-secondary/20 p-4 sm:p-5 rounded-2xl border border-border/50">
+              {/* Category and Tags Row */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+                {/* Category block */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="category-input" className="flex items-center text-xs font-bold text-muted-foreground/80 uppercase tracking-wider pl-1">
+                    <Folder className="h-3.5 w-3.5 mr-2 text-primary" /> Category
+                  </Label>
+                  <div 
+                    className="relative group" 
+                    onBlur={(e) => {
+                      if (!e.currentTarget.contains(e.relatedTarget)) {
+                        setIsCategoryDropdownOpen(false);
+                      }
+                    }}
+                  >
+                    <Input
+                      id="category-input"
+                      value={displayedCategory}
+                      readOnly
+                      onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
+                      onFocus={() => setIsCategoryDropdownOpen(true)}
+                      placeholder="Select category..."
+                      className="w-full bg-background rounded-xl border border-border/80 h-10 sm:h-11 text-sm sm:text-base font-semibold transition-all pr-10 cursor-pointer focus:ring-primary/25"
+                      autoComplete="off"
+                    />
+                    <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none opacity-50 transition-transform group-focus-within:rotate-180" />
+                    
+                    {isCategoryDropdownOpen && (
+                      <div className="absolute z-50 w-full mt-2 bg-card border border-border/80 rounded-xl shadow-xl max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 flex flex-col">
+                        {categoryOptions.map((cat) => (
+                          <button
+                            type="button"
+                            key={cat}
+                            className="px-4 py-3 text-left hover:bg-primary/10 hover:text-primary cursor-pointer text-xs sm:text-sm font-semibold transition-colors border-b border-border/40 last:border-0"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              setCategory(cat === 'All' ? 'other' : cat);
+                              setIsCategoryDropdownOpen(false);
+                            }}
+                          >
+                            {cat}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Interactive Tags Input */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="tags" className="flex items-center text-xs font-bold text-muted-foreground/80 uppercase tracking-wider pl-1">
+                    <Tag className="h-3.5 w-3.5 mr-2 text-primary" /> Tags
+                  </Label>
+                  <div className="relative flex items-center">
+                    <Input
+                      id="tags"
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyDown={handleKeyDownTag}
+                      placeholder="Press enter to add tags..."
+                      className="rounded-xl border border-border/80 bg-background h-10 sm:h-11 text-sm sm:text-base placeholder:text-muted-foreground/45 font-semibold transition-all pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddTagClick}
+                      disabled={!tagInput.trim()}
+                      className="absolute right-2.5 h-6.5 w-6.5 rounded-lg bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground flex items-center justify-center transition-all disabled:opacity-0"
+                      aria-label="Add tag"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  {/* Displayed tags list */}
+                  {tagList.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2 pl-0.5">
+                      {tagList.map((t) => (
+                        <span 
+                          key={t} 
+                          className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-primary/10 text-primary border border-primary/20 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider animate-in fade-in zoom-in-95"
                         >
-                          {cat}
-                        </button>
+                          #{t}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveTag(t)}
+                            className="hover:text-destructive text-primary/60 transition-colors shrink-0 ml-0.5 active:scale-90"
+                            aria-label={`Remove tag ${t}`}
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </span>
                       ))}
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Interactive Tags Input */}
-              <div className="space-y-1.5">
-                <Label htmlFor="tags" className="flex items-center text-xs font-bold text-muted-foreground/80 uppercase tracking-wider pl-1">
-                  <Tag className="h-3.5 w-3.5 mr-2 text-primary" /> Tags
-                </Label>
-                <div className="relative flex items-center">
-                  <Input
-                    id="tags"
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    onKeyDown={handleKeyDownTag}
-                    placeholder="Press enter to add tags..."
-                    className="rounded-xl border border-border/80 bg-background h-10 sm:h-11 text-sm sm:text-base placeholder:text-muted-foreground/45 font-semibold transition-all pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddTagClick}
-                    disabled={!tagInput.trim()}
-                    className="absolute right-2.5 h-6.5 w-6.5 rounded-lg bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground flex items-center justify-center transition-all disabled:opacity-0"
-                    aria-label="Add tag"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
-                </div>
-
-                {/* Displayed tags list */}
-                {tagList.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mt-2 pl-0.5">
-                    {tagList.map((t) => (
-                      <span 
-                        key={t} 
-                        className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-primary/10 text-primary border border-primary/20 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider animate-in fade-in zoom-in-95"
-                      >
-                        #{t}
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveTag(t)}
-                          className="hover:text-destructive text-primary/60 transition-colors shrink-0 ml-0.5 active:scale-90"
-                          aria-label={`Remove tag ${t}`}
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
+              {/* Separator line */}
+              <div className="h-px bg-border/40 my-1" />
               
               {/* Premium Color Presets */}
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label htmlFor="color-picker-input" className="flex items-center text-xs font-bold text-muted-foreground/80 uppercase tracking-wider pl-1">
                   <Palette className="h-3.5 w-3.5 mr-2 text-primary" /> Note Theme
                 </Label>
-                <div className="flex flex-col gap-2">
-                  {/* Row of Circle Presets */}
-                  <div className="flex items-center flex-wrap gap-1.5 h-10 sm:h-11 py-1">
-                    {PRESET_COLORS.map((item) => (
-                      <button
-                        type="button"
-                        key={item.value}
-                        onClick={() => setColor(item.value)}
-                        style={{ backgroundColor: item.value }}
-                        className={`h-6.5 w-6.5 rounded-full border transition-all hover:scale-110 active:scale-95 ${color.toLowerCase() === item.value.toLowerCase() ? 'border-primary ring-2 ring-primary/20 scale-105 shadow-sm' : 'border-border/60'}`}
-                        title={item.name}
-                      />
-                    ))}
-                    
-                    {/* Custom Color trigger */}
-                    <div className="relative h-6.5 w-6.5 rounded-full border border-border/80 flex items-center justify-center bg-background hover:scale-110 active:scale-95 cursor-pointer shadow-sm">
-                      <Plus className="h-3.5 w-3.5 text-muted-foreground" />
-                      <Input
-                        id="color-picker-input"
-                        type="color"
-                        value={color}
-                        onChange={(e) => setColor(e.target.value)}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                        title="Choose custom color"
-                      />
-                    </div>
+                <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 py-1">
+                  {PRESET_COLORS.map((item) => (
+                    <button
+                      type="button"
+                      key={item.value}
+                      onClick={() => setColor(item.value)}
+                      style={{ backgroundColor: item.value }}
+                      className={`h-7 w-7 rounded-full border transition-all hover:scale-110 active:scale-95 cursor-pointer ${color.toLowerCase() === item.value.toLowerCase() ? 'border-primary ring-2 ring-primary/20 scale-105 shadow-sm' : 'border-border/60'}`}
+                      title={item.name}
+                    />
+                  ))}
+                  
+                  {/* Custom Color trigger */}
+                  <div className="relative h-7 w-7 rounded-full border border-border/80 flex items-center justify-center bg-background hover:scale-110 active:scale-95 cursor-pointer shadow-sm">
+                    <Plus className="h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="color-picker-input"
+                      type="color"
+                      value={color}
+                      onChange={(e) => setColor(e.target.value)}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      title="Choose custom color"
+                    />
                   </div>
                 </div>
               </div>
