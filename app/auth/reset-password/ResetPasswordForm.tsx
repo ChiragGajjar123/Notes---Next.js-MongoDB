@@ -127,34 +127,41 @@ export function ResetPasswordForm() {
   return (
     <>
       <Header isAuthPage={true} />
-      <div className="min-h-screen flex items-start justify-center bg-background px-3 py-4 sm:px-4 sm:py-6 pt-[12vh] sm:pt-[15vh]">
-        <Card className="w-full max-w-md shadow-xl border-border/50">
-          <CardHeader className="text-center space-y-2 px-3 py-4 sm:px-6 sm:py-6">
-            <CardTitle className="text-xl sm:text-2xl font-bold tracking-tight flex items-center justify-center gap-2">
-              <KeyRound className="h-6 w-6 text-primary" />
-              Reset Your Password
+      <div className="min-h-[calc(100vh-76px)] flex items-start justify-center bg-background px-3 py-4 sm:px-4 sm:py-6 pt-16 sm:pt-16 relative overflow-hidden">
+        {/* Animated Background Blobs */}
+        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-[-10%] left-[-10%] w-[55%] h-[55%] rounded-full bg-primary/10 blur-[80px] sm:blur-[120px] animate-blob-float-1" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[55%] h-[55%] rounded-full bg-primary/8 blur-[80px] sm:blur-[120px] animate-blob-float-2" />
+          <div className="absolute top-[40%] left-[25%] w-[40%] h-[40%] rounded-full bg-indigo-500/5 blur-[70px] sm:blur-[100px] animate-blob-float-3" />
+        </div>
+
+        <Card className="w-full max-w-md shadow-2xl border-border/40 bg-card/75 dark:bg-card/45 backdrop-blur-xl relative z-10 rounded-2xl sm:rounded-3xl transition-all duration-300">
+          <CardHeader className="text-center space-y-2 px-4 py-5 sm:px-8 sm:py-7">
+            <CardTitle className="text-2xl sm:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent flex items-center justify-center gap-2">
+              <KeyRound className="h-6 w-6 text-primary shrink-0 animate-pulse" />
+              Reset Password
             </CardTitle>
-            <CardDescription className="text-sm">
+            <CardDescription className="text-xs sm:text-sm text-muted-foreground/90 font-medium">
               {hasParams
                 ? 'Enter your new password below to regain access to your account.'
                 : 'Invalid or missing password reset parameters.'}
             </CardDescription>
           </CardHeader>
-          <CardContent className="px-3 pb-4 sm:px-6 sm:pb-6">
+          <CardContent className="px-4 pb-5 sm:px-8 sm:pb-8">
             {!hasParams ? (
               <div className="space-y-4">
-                <div className="rounded-md bg-destructive/10 border border-destructive/20 p-4 text-center">
+                <div className="rounded-xl bg-destructive/10 border border-destructive/20 p-4 text-center">
                   <ShieldAlert className="h-10 w-10 text-destructive mx-auto mb-2" />
-                  <p className="text-destructive font-semibold text-sm">
+                  <p className="text-destructive font-bold text-sm">
                     Invalid Reset Link
                   </p>
-                  <p className="text-muted-foreground text-xs mt-1">
+                  <p className="text-muted-foreground text-xs mt-1 leading-relaxed">
                     This password reset URL is incomplete or invalid. Please request a new link from the Sign In page.
                   </p>
                 </div>
                 <Button
                   onClick={() => router.push('/auth/signin')}
-                  className="w-full"
+                  className="w-full h-11 text-sm font-semibold rounded-xl"
                   variant="outline"
                 >
                   Back to Sign In
@@ -162,37 +169,37 @@ export function ResetPasswordForm() {
               </div>
             ) : success ? (
               <div className="space-y-4">
-                <div className="rounded-md bg-green-500/10 border border-green-500/20 p-4 text-center">
+                <div className="rounded-xl bg-green-500/10 border border-green-500/20 p-4 text-center">
                   <Check className="h-10 w-10 text-green-600 dark:text-green-400 mx-auto mb-2" />
-                  <p className="text-green-600 dark:text-green-400 font-semibold text-sm">
+                  <p className="text-green-600 dark:text-green-400 font-bold text-sm">
                     Password Reset Complete
                   </p>
-                  <p className="text-muted-foreground text-xs mt-1">
+                  <p className="text-muted-foreground text-xs mt-1 leading-relaxed">
                     {success}
                   </p>
                 </div>
                 <Button
                   onClick={() => router.push('/auth/signin')}
-                  className="w-full"
+                  className="w-full h-11 text-sm font-bold rounded-xl shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
                 >
                   Go to Sign In
                 </Button>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-3.5 sm:space-y-4">
-                <div>
-                  <Label htmlFor="email-static">Email</Label>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="email-static" className="text-xs font-semibold text-muted-foreground tracking-wider uppercase pl-1">Email</Label>
                   <Input
                     id="email-static"
                     type="email"
                     value={email}
                     disabled
-                    className="bg-muted text-muted-foreground cursor-not-allowed opacity-80"
+                    className="bg-muted/50 text-muted-foreground cursor-not-allowed opacity-80 h-11"
                   />
                 </div>
 
-                <div>
-                  <Label htmlFor="password">New Password</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="password" className="text-xs font-semibold text-muted-foreground tracking-wider uppercase pl-1">New Password</Label>
                   <div className="relative">
                     <Input
                       id="password"
@@ -202,26 +209,26 @@ export function ResetPasswordForm() {
                       placeholder="Enter new password"
                       autoComplete="new-password"
                       required
-                      className="pr-10"
+                      className="pr-11 bg-background/40 h-11 border-border/80"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/60 hover:text-foreground transition-colors"
                       tabIndex={-1}
                       aria-label={showPassword ? 'Hide password' : 'Show password'}
                     >
                       {showPassword ? (
-                        <EyeOff className="h-4 w-4" />
+                        <EyeOff className="h-4.5 w-4.5" />
                       ) : (
-                        <Eye className="h-4 w-4" />
+                        <Eye className="h-4.5 w-4.5" />
                       )}
                     </button>
                   </div>
 
                   {/* Password Strength Indicator */}
                   {password.length > 0 && (
-                    <div className="mt-2.5 space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                    <div className="mt-2.5 space-y-2.5 p-3 rounded-xl bg-secondary/20 border border-border/40 animate-in fade-in slide-in-from-top-1 duration-200">
                       {/* Strength Bar */}
                       <div className="flex items-center gap-2">
                         <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
@@ -230,26 +237,25 @@ export function ResetPasswordForm() {
                             style={{ width: `${passwordStrength.score}%` }}
                           />
                         </div>
-                        <span className="text-xs font-medium text-muted-foreground min-w-[4.5rem] text-right">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground min-w-[4.5rem] text-right">
                           {passwordStrength.label}
                         </span>
                       </div>
 
                       {/* Requirements Checklist */}
-                      <div className="grid grid-cols-1 gap-0.5">
+                      <div className="grid grid-cols-1 gap-1">
                         {requirementsMet.map((req) => (
                           <div
                             key={req.label}
-                            className={`flex items-center gap-1.5 text-xs transition-colors duration-200 ${
-                              req.met
-                                ? 'text-green-600 dark:text-green-400'
-                                : 'text-muted-foreground'
-                            }`}
+                            className={`flex items-center gap-1.5 text-xs transition-colors duration-200 ${req.met
+                                ? 'text-green-600 dark:text-green-400 font-medium'
+                                : 'text-muted-foreground/70'
+                              }`}
                           >
                             {req.met ? (
-                              <Check className="h-3 w-3 shrink-0" />
+                              <Check className="h-3.5 w-3.5 shrink-0 text-green-500" />
                             ) : (
-                              <X className="h-3 w-3 shrink-0" />
+                              <X className="h-3.5 w-3.5 shrink-0 text-muted-foreground/40" />
                             )}
                             <span>{req.label}</span>
                           </div>
@@ -259,8 +265,8 @@ export function ResetPasswordForm() {
                   )}
                 </div>
 
-                <div>
-                  <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="confirmPassword" className="text-xs font-semibold text-muted-foreground tracking-wider uppercase pl-1">Confirm Password</Label>
                   <div className="relative">
                     <Input
                       id="confirmPassword"
@@ -270,27 +276,27 @@ export function ResetPasswordForm() {
                       placeholder="Confirm new password"
                       autoComplete="new-password"
                       required
-                      className="pr-10"
+                      className="pr-11 bg-background/40 h-11 border-border/80"
                     />
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/60 hover:text-foreground transition-colors"
                       tabIndex={-1}
                       aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
                     >
                       {showConfirmPassword ? (
-                        <EyeOff className="h-4 w-4" />
+                        <EyeOff className="h-4.5 w-4.5" />
                       ) : (
-                        <Eye className="h-4 w-4" />
+                        <Eye className="h-4.5 w-4.5" />
                       )}
                     </button>
                   </div>
                 </div>
 
                 {error && (
-                  <div className="rounded-md bg-destructive/10 border border-destructive/20 px-3 py-2">
-                    <p className="text-destructive text-sm text-center font-medium">
+                  <div className="rounded-xl bg-destructive/10 border border-destructive/20 px-4 py-3 animate-in fade-in duration-200">
+                    <p className="text-destructive text-xs sm:text-sm text-center font-semibold leading-relaxed">
                       {error}
                     </p>
                   </div>
@@ -298,12 +304,12 @@ export function ResetPasswordForm() {
 
                 <Button
                   type="submit"
-                  className="w-full min-h-10 whitespace-normal"
+                  className="w-full h-11 sm:h-12 text-sm sm:text-base font-bold rounded-xl shadow-lg hover:shadow-primary/25 hover:scale-[1.02] active:scale-[0.98] transition-all bg-primary text-primary-foreground whitespace-normal"
                   disabled={isLoading || (password.length > 0 && !allRequirementsMet) || confirmPassword.length === 0}
                 >
                   {isLoading ? (
                     <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      <Loader2 className="h-4.5 w-4.5 mr-2 animate-spin" />
                       Please wait...
                     </>
                   ) : (

@@ -36,7 +36,7 @@ export function Header({
   };
 
   return (
-    <header className="fixed inset-x-0 top-0 z-40 w-full bg-background/60 backdrop-blur-xl border-b border-border/40 shadow-sm transition-all duration-300">
+    <header className="sticky inset-x-0 top-0 z-40 w-full bg-background/60 backdrop-blur-xl border-b border-border/40 shadow-sm transition-all duration-300">
       <div className="container mx-auto px-3 sm:px-6 py-3 sm:py-4">
         <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
           <div className="flex min-w-0 flex-wrap items-center gap-2 sm:gap-3">

@@ -1,7 +1,11 @@
-@import "tailwindcss/theme";
-@import "tailwindcss/utilities";
+@import "tailwindcss";
 
 @custom-variant dark (&:is(.dark *));
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
 
 @theme {
   --color-border: hsl(var(--border));
@@ -38,18 +42,49 @@
   --font-sans: var(--font-poppins), "Poppins", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-serif: var(--font-poppins), "Poppins", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: var(--font-poppins), "Poppins", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  --animate-blob-float-1: blob-float-1 25s infinite alternate ease-in-out;
+  --animate-blob-float-2: blob-float-2 30s infinite alternate ease-in-out;
+  --animate-blob-float-3: blob-float-3 22s infinite alternate ease-in-out;
+
+  @keyframes blob-float-1 {
+    0% { transform: translate(0px, 0px) scale(1); }
+    33% { transform: translate(30px, -50px) scale(1.1); }
+    66% { transform: translate(-20px, 20px) scale(0.95); }
+    100% { transform: translate(0px, 0px) scale(1); }
+  }
+  @keyframes blob-float-2 {
+    0% { transform: translate(0px, 0px) scale(1); }
+    50% { transform: translate(-40px, 40px) scale(1.15); }
+    100% { transform: translate(0px, 0px) scale(1); }
+  }
+  @keyframes blob-float-3 {
+    0% { transform: translate(0px, 0px) scale(1); }
+    33% { transform: translate(-10px, -40px) scale(0.9); }
+    66% { transform: translate(40px, 20px) scale(1.1); }
+    100% { transform: translate(0px, 0px) scale(1); }
+  }
 }
 
 @utility glass {
-  background: hsl(var(--background) / 0.6);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: hsl(var(--background) / 0.7);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
   border: 1px solid hsl(var(--border) / 0.5);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.04);
+}
+
+@utility glass-dark {
+  background: hsl(var(--background) / 0.45);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid hsl(var(--border) / 0.15);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
 }
 
 :root {
-  /* Soft, vibrant light mode */
-  --background: 210 40% 98%;
+  /* Soft, vibrant light mode with premium pastel hints */
+  --background: 210 40% 97.5%;
   --foreground: 222 47% 11%;
   
   --card: 0 0% 100%;
@@ -58,7 +93,7 @@
   --popover: 0 0% 100%;
   --popover-foreground: 222 47% 11%;
   
-  --primary: 252 87% 67%; /* Vibrant Indigo-Purple */
+  --primary: 255 77% 64%; /* Modern Vibrant Indigo/Purple */
   --primary-foreground: 0 0% 100%;
   
   --secondary: 214 32% 91%;
@@ -67,48 +102,48 @@
   --muted: 214 32% 91%;
   --muted-foreground: 215 16% 47%;
   
-  --accent: 252 87% 96%;
+  --accent: 255 77% 96%;
   --accent-foreground: 222 47% 11%;
   
-  --destructive: 0 84% 60%;
+  --destructive: 350 84% 60%;
   --destructive-foreground: 0 0% 100%;
   
-  --border: 214 32% 91%;
-  --input: 214 32% 91%;
-  --ring: 252 87% 67%;
+  --border: 214 32% 89%;
+  --input: 214 32% 89%;
+  --ring: 255 77% 64%;
   
-  --radius: 1rem;
+  --radius: 1.25rem;
 }
 
 .dark {
-  /* Midnight aesthetic, deep space blue */
-  --background: 222 47% 7%;
+  /* Deep cosmic dark space blue */
+  --background: 222 47% 4.5%;
   --foreground: 210 40% 98%;
   
-  --card: 222 47% 10%;
+  --card: 222 47% 7.5%;
   --card-foreground: 210 40% 98%;
   
-  --popover: 222 47% 10%;
+  --popover: 222 47% 7.5%;
   --popover-foreground: 210 40% 98%;
   
-  --primary: 252 87% 67%;
+  --primary: 255 77% 64%;
   --primary-foreground: 0 0% 100%;
   
-  --secondary: 217 32% 17%;
+  --secondary: 217 32% 14%;
   --secondary-foreground: 210 40% 98%;
   
-  --muted: 217 32% 17%;
+  --muted: 217 32% 14%;
   --muted-foreground: 215 20.2% 65.1%;
   
-  --accent: 252 50% 25%;
+  --accent: 255 50% 20%;
   --accent-foreground: 210 40% 98%;
   
-  --destructive: 0 62% 30%;
+  --destructive: 350 62% 35%;
   --destructive-foreground: 0 0% 100%;
   
-  --border: 217 32% 17%;
-  --input: 217 32% 17%;
-  --ring: 252 87% 67%;
+  --border: 217 32% 13%;
+  --input: 217 32% 13%;
+  --ring: 255 77% 64%;
 }
 
 @layer base {
@@ -134,13 +169,28 @@
   [role="menuitem"]:not([aria-disabled="true"]),
   [role="option"]:not([aria-disabled="true"]),
   a {
-    cursor: pointer !important;
+    cursor: pointer;
   }
 
   button:disabled,
   [aria-disabled="true"],
   [data-disabled="true"] {
-    cursor: not-allowed !important;
+    cursor: not-allowed;
+  }
+
+  /* Global browser reset for buttons to prevent ugly native borders/backgrounds */
+  button,
+  [type='button'],
+  [type='reset'],
+  [type='submit'] {
+    background-color: transparent;
+    border-width: 0;
+    border-style: solid;
+    border-color: transparent;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    color: inherit;
   }
 }
 

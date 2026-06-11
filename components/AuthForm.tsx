@@ -183,26 +183,33 @@ export function AuthForm() {
   return (
     <>
       <Header isAuthPage={true} />
-      <div className="min-h-screen flex items-start justify-center bg-background px-3 py-4 sm:px-4 sm:py-6 pt-[12vh] sm:pt-[15vh]">
-        <Card className="w-full max-w-md shadow-xl border-border/50">
-          <CardHeader className="text-center space-y-2 px-3 py-4 sm:px-6 sm:py-6">
-            <CardTitle className="text-xl sm:text-2xl font-bold tracking-tight">
+      <div className="min-h-[calc(100vh-76px)] flex items-start justify-center bg-background px-3 py-4 sm:px-4 sm:py-6 pt-16 sm:pt-16 relative overflow-hidden">
+        {/* Animated Background Blobs */}
+        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-[-10%] left-[-10%] w-[55%] h-[55%] rounded-full bg-primary/10 blur-[80px] sm:blur-[120px] animate-blob-float-1" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[55%] h-[55%] rounded-full bg-primary/8 blur-[80px] sm:blur-[120px] animate-blob-float-2" />
+          <div className="absolute top-[40%] left-[25%] w-[40%] h-[40%] rounded-full bg-indigo-500/5 blur-[70px] sm:blur-[100px] animate-blob-float-3" />
+        </div>
+
+        <Card className="w-full max-w-md shadow-2xl border-border/40 bg-card/75 dark:bg-card/45 backdrop-blur-xl relative z-10 rounded-2xl sm:rounded-3xl transition-all duration-300">
+          <CardHeader className="text-center space-y-2 px-4 py-5 sm:px-8 sm:py-7">
+            <CardTitle className="text-2xl sm:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
               {isForgot ? 'Reset Password' : isSignUp ? 'Create Account' : 'Sign In'}
             </CardTitle>
-            <CardDescription className="text-sm">
+            <CardDescription className="text-xs sm:text-sm text-muted-foreground/90 font-medium">
               {isForgot
                 ? 'Enter your email address to receive a password reset link'
                 : isSignUp
-                ? 'Create a new account to start taking notes'
-                : 'Sign in to your account to access your notes'
+                  ? 'Create a new account to start taking notes'
+                  : 'Sign in to your account to access your notes'
               }
             </CardDescription>
           </CardHeader>
-          <CardContent className="px-3 pb-4 sm:px-6 sm:pb-6">
-            <form onSubmit={handleSubmit} className="space-y-3.5 sm:space-y-4">
+          <CardContent className="px-4 pb-5 sm:px-8 sm:pb-8">
+            <form onSubmit={handleSubmit} className="space-y-4">
               {isSignUp && !isForgot && (
-                <div>
-                  <Label htmlFor="name">Name</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="name" className="text-xs font-semibold text-muted-foreground tracking-wider uppercase pl-1">Name</Label>
                   <Input
                     id="name"
                     type="text"
@@ -212,12 +219,13 @@ export function AuthForm() {
                     autoComplete="name"
                     maxLength={MAX_NAME_LENGTH}
                     required={isSignUp}
+                    className="bg-background/40 h-11 border-border/80"
                   />
                 </div>
               )}
 
-              <div>
-                <Label htmlFor="email">Email</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="email" className="text-xs font-semibold text-muted-foreground tracking-wider uppercase pl-1">Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -226,13 +234,14 @@ export function AuthForm() {
                   placeholder="Enter your email"
                   autoComplete="email"
                   required
+                  className="bg-background/40 h-11 border-border/80"
                 />
               </div>
 
               {!isForgot && (
-                <div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="password">Password</Label>
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between pl-1">
+                    <Label htmlFor="password" className="text-xs font-semibold text-muted-foreground tracking-wider uppercase">Password</Label>
                     {!isSignUp && (
                       <button
                         type="button"
@@ -242,7 +251,7 @@ export function AuthForm() {
                           setForgotSuccess('');
                           setResetUrl('');
                         }}
-                        className="text-xs text-primary hover:underline font-medium"
+                        className="text-xs text-primary hover:text-primary/80 transition-colors hover:underline font-semibold"
                       >
                         Forgot password?
                       </button>
@@ -257,26 +266,26 @@ export function AuthForm() {
                       placeholder="Enter your password"
                       autoComplete={isSignUp ? 'new-password' : 'current-password'}
                       required={!isForgot}
-                      className="pr-10"
+                      className="pr-11 bg-background/40 h-11 border-border/80"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/60 hover:text-foreground transition-colors"
                       tabIndex={-1}
                       aria-label={showPassword ? 'Hide password' : 'Show password'}
                     >
                       {showPassword ? (
-                        <EyeOff className="h-4 w-4" />
+                        <EyeOff className="h-4.5 w-4.5" />
                       ) : (
-                        <Eye className="h-4 w-4" />
+                        <Eye className="h-4.5 w-4.5" />
                       )}
                     </button>
                   </div>
 
                   {/* Password Strength Indicator (signup only) */}
                   {isSignUp && password.length > 0 && (
-                    <div className="mt-2.5 space-y-2">
+                    <div className="mt-2.5 space-y-2.5 p-3 rounded-xl bg-secondary/20 border border-border/40">
                       {/* Strength Bar */}
                       <div className="flex items-center gap-2">
                         <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
@@ -285,26 +294,25 @@ export function AuthForm() {
                             style={{ width: `${passwordStrength.score}%` }}
                           />
                         </div>
-                        <span className="text-xs font-medium text-muted-foreground min-w-[4.5rem] text-right">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground min-w-[4.5rem] text-right">
                           {passwordStrength.label}
                         </span>
                       </div>
 
                       {/* Requirements Checklist */}
-                      <div className="grid grid-cols-1 gap-0.5">
+                      <div className="grid grid-cols-1 gap-1">
                         {requirementsMet.map((req) => (
                           <div
                             key={req.label}
-                            className={`flex items-center gap-1.5 text-xs transition-colors duration-200 ${
-                              req.met
-                                ? 'text-green-600 dark:text-green-400'
-                                : 'text-muted-foreground'
-                            }`}
+                            className={`flex items-center gap-1.5 text-xs transition-colors duration-200 ${req.met
+                              ? 'text-green-600 dark:text-green-400 font-medium'
+                              : 'text-muted-foreground/70'
+                              }`}
                           >
                             {req.met ? (
-                              <Check className="h-3 w-3 shrink-0" />
+                              <Check className="h-3.5 w-3.5 shrink-0 text-green-500" />
                             ) : (
-                              <X className="h-3 w-3 shrink-0" />
+                              <X className="h-3.5 w-3.5 shrink-0 text-muted-foreground/40" />
                             )}
                             <span>{req.label}</span>
                           </div>
@@ -316,23 +324,23 @@ export function AuthForm() {
               )}
 
               {error && (
-                <div className="rounded-md bg-destructive/10 border border-destructive/20 px-3 py-2">
-                  <p className="text-destructive text-sm text-center font-medium">
+                <div className="rounded-xl bg-destructive/10 border border-destructive/20 px-4 py-3 animate-in fade-in duration-200">
+                  <p className="text-destructive text-xs sm:text-sm text-center font-semibold leading-relaxed">
                     {error}
                   </p>
                 </div>
               )}
 
               {forgotSuccess && (
-                <div className="rounded-md bg-green-500/10 border border-green-500/20 px-3 py-2.5">
-                  <p className="text-green-600 dark:text-green-400 text-sm text-center font-medium leading-relaxed">
+                <div className="rounded-xl bg-green-500/10 border border-green-500/20 px-4 py-3 animate-in fade-in duration-200">
+                  <p className="text-green-600 dark:text-green-400 text-xs sm:text-sm text-center font-medium leading-relaxed">
                     {forgotSuccess}
                   </p>
                   {resetUrl && (
                     <div className="mt-3 text-center">
                       <a
                         href={resetUrl}
-                        className="inline-flex items-center gap-1 text-xs text-primary font-bold hover:underline bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20 transition-all hover:scale-105"
+                        className="inline-flex items-center gap-1 text-xs text-primary font-bold hover:underline bg-primary/10 px-3.5 py-2 rounded-xl border border-primary/20 transition-all hover:scale-105"
                       >
                         Reset Password (Test Link)
                       </a>
@@ -343,29 +351,29 @@ export function AuthForm() {
 
               <Button
                 type="submit"
-                className="w-full min-h-10 whitespace-normal"
+                className="w-full h-11 sm:h-12 text-sm sm:text-base font-bold rounded-xl shadow-lg hover:shadow-primary/25 hover:scale-[1.02] active:scale-[0.98] transition-all bg-primary text-primary-foreground whitespace-normal"
                 disabled={isLoading || (!isForgot && isSignUp && password.length > 0 && !allRequirementsMet)}
               >
                 {isLoading ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <Loader2 className="h-4.5 w-4.5 mr-2 animate-spin" />
                     Please wait...
                   </>
                 ) : (
                   <>
                     {isForgot ? (
                       <>
-                        <LogIn className="h-4 w-4 mr-2" />
+                        <LogIn className="h-4.5 w-4.5 mr-2" />
                         Send Reset Link
                       </>
                     ) : isSignUp ? (
                       <>
-                        <UserPlus className="h-4 w-4 mr-2" />
+                        <UserPlus className="h-4.5 w-4.5 mr-2" />
                         Create Account
                       </>
                     ) : (
                       <>
-                        <LogIn className="h-4 w-4 mr-2" />
+                        <LogIn className="h-4.5 w-4.5 mr-2" />
                         Sign In
                       </>
                     )}
@@ -374,7 +382,7 @@ export function AuthForm() {
               </Button>
             </form>
 
-            <div className="mt-4 text-center">
+            <div className="mt-5 text-center">
               {isForgot ? (
                 <button
                   type="button"
@@ -384,7 +392,7 @@ export function AuthForm() {
                     setForgotSuccess('');
                     setResetUrl('');
                   }}
-                  className="text-sm text-primary hover:underline font-medium animate-in fade-in duration-300"
+                  className="text-xs sm:text-sm text-primary hover:text-primary/80 font-bold transition-all animate-in fade-in duration-300"
                 >
                   Back to Sign In
                 </button>
@@ -397,7 +405,7 @@ export function AuthForm() {
                     setPassword('');
                     setShowPassword(false);
                   }}
-                  className="text-sm text-primary hover:underline"
+                  className="text-xs sm:text-sm text-primary hover:text-primary/80 font-bold transition-all"
                 >
                   {isSignUp
                     ? 'Already have an account? Sign in'
