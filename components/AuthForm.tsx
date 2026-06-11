@@ -150,7 +150,7 @@ export function AuthForm() {
         setIsLoading(false);
       } else {
         await getSession();
-        router.push('/');
+        window.location.replace(result?.url || '/');
       }
     } catch (error) {
       setError('An unexpected error occurred. Please try again.');
