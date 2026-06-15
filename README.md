@@ -53,7 +53,13 @@ A feature-rich, professional notes application built with Next.js, MongoDB, and 
    # NextAuth.js
    NEXTAUTH_URL="http://localhost:3000"
    NEXTAUTH_SECRET="your-secret-key-here"
+
+   # Email (Resend) — required for password reset emails
+   RESEND_API_KEY="re_xxxxxxxx"
+   EMAIL_FROM="Notes App <onboarding@resend.dev>"
    ```
+   
+   For production, create a free account at [resend.com](https://resend.com), add your API key, and set `EMAIL_FROM` to a verified sender/domain.
    
    To generate a secure secret:
    ```bash
@@ -110,12 +116,16 @@ A feature-rich, professional notes application built with Next.js, MongoDB, and 
      - `MONGODB_URI`: Your MongoDB connection string
      - `NEXTAUTH_URL`: Your deployed app URL (e.g., `https://your-app.vercel.app`)
      - `NEXTAUTH_SECRET`: Generate a new secret for production
+     - `RESEND_API_KEY`: Your Resend API key
+     - `EMAIL_FROM`: Verified sender address (e.g. `Notes App <noreply@yourdomain.com>`)
 
 3. **Environment Variables for Production**
    ```env
    MONGODB_URI="mongodb+srv://username:password@cluster.mongodb.net/notes-app"
    NEXTAUTH_URL="https://your-app.vercel.app"
    NEXTAUTH_SECRET="your-production-secret"
+   RESEND_API_KEY="re_xxxxxxxx"
+   EMAIL_FROM="Notes App <noreply@yourdomain.com>"
    ```
 
 ### Manual Deployment

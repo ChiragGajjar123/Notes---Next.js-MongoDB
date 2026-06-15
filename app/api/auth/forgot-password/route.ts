@@ -5,6 +5,10 @@ import User from '@/lib/models/User';
 import { forgotPasswordSchema } from '@/lib/validations';
 import { enforceRateLimit } from '@/lib/auth-helpers';
 import { RATE_LIMITS } from '@/lib/rate-limit';
+import { isEmailConfigured, sendPasswordResetEmail } from '@/lib/email';
+
+const SUCCESS_MESSAGE =
+  'If an account with that email exists, a password reset link has been sent to your inbox.';
 
 export async function POST(request: Request) {
   try {
@@ -19,7 +23,7 @@ export async function POST(request: Request) {
     // 2. Parse and validate email input
     const body = await request.json();
     const validation = forgotPasswordSchema.safeParse(body);
-    
+
     if (!validation.success) {
       return NextResponse.json(
         { error: validation.error.issues[0]?.message || 'Invalid email address.' },
@@ -34,9 +38,7 @@ export async function POST(request: Request) {
     const user = await User.findOne({ email });
 
     // For security reasons, do not reveal if the user exists or not (prevent email enumeration)
-    const successResponse = {
-      message: 'If an account with that email exists, a password reset link has been generated.'
-    };
+    const successResponse = { message: SUCCESS_MESSAGE };
 
     if (!user) {
       return NextResponse.json(successResponse);
@@ -53,23 +55,38 @@ export async function POST(request: Request) {
       {
         $set: {
           resetPasswordToken: hashedToken,
-          resetPasswordExpires: expiryDate
-        }
+          resetPasswordExpires: expiryDate,
+        },
       }
     );
 
     // 6. Generate the reset URL
-    const origin = new URL(request.url).origin;
+    const origin = process.env.NEXTAUTH_URL || new URL(request.url).origin;
     const resetUrl = `${origin}/auth/reset-password?token=${rawToken}&email=${encodeURIComponent(email)}`;
-    
-    // Log to console for the developer
-    console.log(`\n========================================\n[PASSWORD RESET LINK]: ${resetUrl}\n========================================\n`);
 
-    // In local development or staging, we return the reset link in the response to make it easy to test
-    const responsePayload = {
+    const emailResult = await sendPasswordResetEmail({
+      to: email,
+      resetUrl,
+      userName: user.name,
+    });
+
+    const responsePayload: { message: string; resetUrl?: string } = {
       ...successResponse,
-      ...(process.env.NODE_ENV === 'development' ? { resetUrl } : {})
     };
+
+    if (emailResult.sent) {
+      return NextResponse.json(responsePayload);
+    }
+
+    console.error('Failed to send password reset email:', emailResult.error);
+    console.log(
+      `\n========================================\n[PASSWORD RESET LINK]: ${resetUrl}\n========================================\n`
+    );
+
+    // Dev fallback when email is not configured or delivery fails
+    if (process.env.NODE_ENV === 'development' || !isEmailConfigured()) {
+      responsePayload.resetUrl = resetUrl;
+    }
 
     return NextResponse.json(responsePayload);
   } catch (error) {
