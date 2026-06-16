@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Archive, Sun, Moon, LogOut, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSession, signOut } from 'next-auth/react';
@@ -30,12 +31,14 @@ export function Header({
   sessionUser = null,
 }: HeaderProps) {
   const { data: session } = useSession();
+  const router = useRouter();
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   const handleSignOut = async () => {
     setIsSigningOut(true);
     try {
-      await signOut();
+      await signOut({ redirect: false });
+      router.push('/auth/signin');
     } catch (error) {
       console.error('Sign out error:', error);
       setIsSigningOut(false);

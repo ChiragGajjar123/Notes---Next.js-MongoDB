@@ -134,7 +134,6 @@ export function AuthForm() {
       } else {
         await getSession();
         router.replace('/');
-        router.refresh();
       }
     } catch {
       setState(prev => ({
