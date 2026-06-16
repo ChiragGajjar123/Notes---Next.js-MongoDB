@@ -12,6 +12,7 @@ import { Header } from './Header';
 import { BackgroundBlobs } from './BackgroundBlobs';
 import { PasswordInput } from './PasswordInput';
 import { PasswordStrengthIndicator } from './PasswordStrengthIndicator';
+import { forgotPasswordAction } from '@/app/actions';
 
 import { PASSWORD_REQUIREMENTS } from '@/lib/validations';
 
@@ -67,20 +68,15 @@ export function AuthForm() {
       setState(prev => ({ ...prev, isLoading: true, error: '', forgotSuccess: '', resetUrl: '' }));
 
       try {
-        const response = await fetch('/api/auth/forgot-password', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: trimmedEmail }),
-        });
-        const data = await response.json();
-        if (response.ok) {
+        const result = await forgotPasswordAction(trimmedEmail);
+        if (result.ok) {
           setState(prev => ({
             ...prev,
-            forgotSuccess: data.message,
-            resetUrl: data.resetUrl || '',
+            forgotSuccess: result.data.message,
+            resetUrl: result.data.resetUrl || '',
           }));
         } else {
-          setState(prev => ({ ...prev, error: data.error || 'Failed to send reset link.' }));
+          setState(prev => ({ ...prev, error: result.error || 'Failed to send reset link.' }));
         }
       } catch {
         setState(prev => ({ ...prev, error: 'An unexpected error occurred. Please try again.' }));

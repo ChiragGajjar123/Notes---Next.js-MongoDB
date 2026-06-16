@@ -11,6 +11,14 @@ import { Note } from '@/types';
 import { Header } from '@/components/Header';
 import { CategoryDialog } from '@/components/CategoryDialog';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import {
+  deleteCategoryAction,
+  deleteNoteAction,
+  getCategoriesAction,
+  getNotesAction,
+  saveNoteAction,
+  updateThemeAction,
+} from '@/app/actions';
 
 const NoteEditor = dynamic(() => import('@/components/NoteEditor').then(mod => mod.NoteEditor), {
   ssr: false
@@ -61,20 +69,8 @@ export function NotesDashboard({
   const fetchNotes = useCallback(async (isInitial = false) => {
     if (isInitial) setIsInitialLoading(true);
     try {
-      const params = new URLSearchParams();
-      if (showArchived) params.append('archived', 'true');
-
-      const response = await fetch(`/api/notes?${params}`, {
-        cache: 'no-store',
-        headers: { 
-          'Pragma': 'no-cache',
-          'Cache-Control': 'no-cache'
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setNotes(data);
-      }
+      const result = await getNotesAction(showArchived);
+      if (result.ok) setNotes(result.data);
     } catch (error) {
       console.error('Error fetching notes:', error);
     } finally {
@@ -84,17 +80,8 @@ export function NotesDashboard({
 
   const fetchCategories = useCallback(async () => {
     try {
-      const response = await fetch('/api/categories', {
-        cache: 'no-store',
-        headers: { 
-          'Pragma': 'no-cache',
-          'Cache-Control': 'no-cache'
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setSavedCategories(data.categories || []);
-      }
+      const result = await getCategoriesAction();
+      if (result.ok) setSavedCategories(result.data);
     } catch (e) {
       console.error(e);
     }
@@ -169,8 +156,8 @@ export function NotesDashboard({
   const handleExecuteDeleteEmptyCategory = async (name: string) => {
     setDeletingCategoryName(name);
     try {
-      const response = await fetch(`/api/categories?name=${encodeURIComponent(name)}`, { method: 'DELETE' });
-      if (response.ok) {
+      const result = await deleteCategoryAction(name);
+      if (result.ok) {
         await fetchCategories();
         await fetchNotes();
       }
@@ -193,20 +180,8 @@ export function NotesDashboard({
 
   const handleSaveNote = async (noteData: Partial<Note>) => {
     try {
-      const url = noteData._id ? `/api/notes/${noteData._id}` : '/api/notes';
-      const method = noteData._id ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(noteData),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save note');
-      }
+      const result = await saveNoteAction(noteData);
+      if (!result.ok) throw new Error(result.error);
 
       await fetchNotes();
       await fetchCategories();
@@ -224,11 +199,8 @@ export function NotesDashboard({
     if (!noteIdToDelete) return;
     setIsDeletingNoteId(noteIdToDelete);
     try {
-      const response = await fetch(`/api/notes/${noteIdToDelete}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
+      const result = await deleteNoteAction(noteIdToDelete);
+      if (result.ok) {
         await fetchNotes();
       }
     } catch (error) {
@@ -273,11 +245,7 @@ export function NotesDashboard({
     setIsChangingTheme(true);
     
     try {
-      await fetch('/api/user/settings', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ theme: newMode ? 'dark' : 'light' })
-      });
+      await updateThemeAction(newMode ? 'dark' : 'light');
     } catch (error) {
       console.error('Failed to save theme preference:', error);
     } finally {

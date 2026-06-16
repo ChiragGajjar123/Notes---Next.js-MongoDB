@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { createCategoryAction, renameCategoryAction } from '@/app/actions';
 
 interface CategoryDialogProps {
   isOpen: boolean;
@@ -36,25 +37,17 @@ export function CategoryDialog({ isOpen, onClose, mode, categoryToRename, onSucc
     
     setIsLoading(true);
     try {
-      let response;
-      if (mode === 'create') {
-        response = await fetch('/api/categories', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: trimmedName })
-        });
-      } else {
-        if (!categoryToRename) return;
-        response = await fetch('/api/categories', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ oldName: categoryToRename, newName: trimmedName })
-        });
-      }
+      const result = mode === 'create'
+        ? await createCategoryAction(trimmedName)
+        : categoryToRename
+          ? await renameCategoryAction(categoryToRename, trimmedName)
+          : { ok: false, error: 'Missing category name.' };
 
-      if (response.ok) {
+      if (result.ok) {
         await onSuccess(trimmedName);
         onClose();
+      } else {
+        console.error(`Failed to ${mode} category:`, result.error);
       }
     } catch (e) {
       console.error(`Failed to ${mode} category:`, e);

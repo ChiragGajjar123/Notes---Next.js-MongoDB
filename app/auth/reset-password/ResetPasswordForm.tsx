@@ -11,6 +11,7 @@ import { Header } from '@/components/Header';
 import { BackgroundBlobs } from '@/components/BackgroundBlobs';
 import { PasswordInput } from '@/components/PasswordInput';
 import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicator';
+import { resetPasswordAction } from '@/app/actions';
 
 import { PASSWORD_REQUIREMENTS } from '@/lib/validations';
 
@@ -60,24 +61,18 @@ export function ResetPasswordForm() {
     setSuccess('');
 
     try {
-      const response = await fetch('/api/auth/reset-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          token,
-          email,
-          password
-        }),
+      const result = await resetPasswordAction({
+        token,
+        email,
+        password,
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        setSuccess(data.message || 'Your password has been successfully reset.');
+      if (result.ok) {
+        setSuccess(result.data.message || 'Your password has been successfully reset.');
         setPassword('');
         setConfirmPassword('');
       } else {
-        setError(data.error || 'Failed to reset password.');
+        setError(result.error || 'Failed to reset password.');
       }
     } catch {
       setError('An unexpected error occurred. Please try again.');
