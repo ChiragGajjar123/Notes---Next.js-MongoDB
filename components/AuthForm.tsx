@@ -116,7 +116,8 @@ export function AuthForm() {
         setIsLoading(false);
       } else {
         await getSession();
-        window.location.replace(result?.url || '/');
+        router.replace(result?.url || '/');
+        router.refresh();
       }
     } catch {
       setError('An unexpected error occurred. Please try again.');
