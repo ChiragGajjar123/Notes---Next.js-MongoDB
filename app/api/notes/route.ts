@@ -1,18 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongoose';
 import Note from '@/lib/models/Note';
-import { requireAuth, enforceApiRateLimit } from '@/lib/auth-helpers';
+import { authenticateAndConnect } from '@/lib/auth-helpers';
 import { createNoteSchema } from '@/lib/validations';
 
 export async function GET(request: NextRequest) {
   try {
-    const { session, response } = await requireAuth();
+    const { session, response } = await authenticateAndConnect(request);
     if (response) return response;
-
-    const rateLimitResponse = await enforceApiRateLimit(request, session.user.id);
-    if (rateLimitResponse) return rateLimitResponse;
-
-    await connectDB();
 
     const { searchParams } = new URL(request.url);
     const category = searchParams.get('category');
@@ -48,13 +42,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { session, response } = await requireAuth();
+    const { session, response } = await authenticateAndConnect(request);
     if (response) return response;
-
-    const rateLimitResponse = await enforceApiRateLimit(request, session.user.id);
-    if (rateLimitResponse) return rateLimitResponse;
-
-    await connectDB();
 
     const body = await request.json();
     const validation = createNoteSchema.safeParse(body);

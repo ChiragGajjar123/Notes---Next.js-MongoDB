@@ -1,18 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongoose';
 import User from '@/lib/models/User';
-import { requireAuth, enforceApiRateLimit } from '@/lib/auth-helpers';
+import { authenticateAndConnect } from '@/lib/auth-helpers';
 import { updateSettingsSchema } from '@/lib/validations';
 
 export async function GET(request: NextRequest) {
   try {
-    const { session, response } = await requireAuth();
+    const { session, response } = await authenticateAndConnect(request);
     if (response) return response;
-
-    const rateLimitResponse = await enforceApiRateLimit(request, session.user.id);
-    if (rateLimitResponse) return rateLimitResponse;
-
-    await connectDB();
     const user = await User.findById(session.user.id);
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -31,11 +25,8 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const { session, response } = await requireAuth();
+    const { session, response } = await authenticateAndConnect(request);
     if (response) return response;
-
-    const rateLimitResponse = await enforceApiRateLimit(request, session.user.id);
-    if (rateLimitResponse) return rateLimitResponse;
 
     const body = await request.json();
     const validation = updateSettingsSchema.safeParse(body);
@@ -47,7 +38,6 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    await connectDB();
     const user = await User.findByIdAndUpdate(
       session.user.id,
       { theme: validation.data.theme },

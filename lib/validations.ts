@@ -10,6 +10,30 @@ export const PASSWORD_RULES = {
   requireSpecial: true,
 } as const;
 
+export interface PasswordRequirement {
+  label: string;
+  test: (password: string) => boolean;
+}
+
+export const PASSWORD_REQUIREMENTS: PasswordRequirement[] = [
+  { label: 'At least 8 characters', test: (p) => p.length >= PASSWORD_RULES.minLength },
+  { label: 'One uppercase letter', test: (p) => /[A-Z]/.test(p) },
+  { label: 'One lowercase letter', test: (p) => /[a-z]/.test(p) },
+  { label: 'One number', test: (p) => /[0-9]/.test(p) },
+  { label: 'One special character', test: (p) => /[^a-zA-Z0-9]/.test(p) },
+];
+
+export function getPasswordStrength(password: string): { score: number; label: string; color: string } {
+  if (!password) return { score: 0, label: '', color: '' };
+  const passed = PASSWORD_REQUIREMENTS.filter((r) => r.test(password)).length;
+  const ratio = passed / PASSWORD_REQUIREMENTS.length;
+  if (ratio <= 0.2) return { score: ratio * 100, label: 'Very Weak', color: 'bg-red-500' };
+  if (ratio <= 0.4) return { score: ratio * 100, label: 'Weak', color: 'bg-orange-500' };
+  if (ratio <= 0.6) return { score: ratio * 100, label: 'Fair', color: 'bg-yellow-500' };
+  if (ratio <= 0.8) return { score: ratio * 100, label: 'Good', color: 'bg-blue-500' };
+  return { score: 100, label: 'Strong', color: 'bg-green-500' };
+}
+
 // ─── Auth Schemas ────────────────────────────────────────────────
 export const signupSchema = z.object({
   name: z

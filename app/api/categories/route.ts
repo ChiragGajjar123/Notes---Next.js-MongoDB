@@ -1,19 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongoose';
 import Note from '@/lib/models/Note';
 import User from '@/lib/models/User';
-import { requireAuth, enforceApiRateLimit } from '@/lib/auth-helpers';
+import { authenticateAndConnect } from '@/lib/auth-helpers';
 import { createCategorySchema, renameCategorySchema } from '@/lib/validations';
 
 export async function GET(request: NextRequest) {
   try {
-    const { session, response } = await requireAuth();
+    const { session, response } = await authenticateAndConnect(request);
     if (response) return response;
-
-    const rateLimitResponse = await enforceApiRateLimit(request, session.user.id);
-    if (rateLimitResponse) return rateLimitResponse;
-
-    await connectDB();
     const user = await User.findById(session.user.id);
     return NextResponse.json({ categories: user?.categories || [] });
   } catch (error) {
@@ -26,13 +20,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { session, response } = await requireAuth();
+    const { session, response } = await authenticateAndConnect(request);
     if (response) return response;
-
-    const rateLimitResponse = await enforceApiRateLimit(request, session.user.id);
-    if (rateLimitResponse) return rateLimitResponse;
-
-    await connectDB();
 
     const body = await request.json();
     const validation = createCategorySchema.safeParse(body);
@@ -66,13 +55,8 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const { session, response } = await requireAuth();
+    const { session, response } = await authenticateAndConnect(request);
     if (response) return response;
-
-    const rateLimitResponse = await enforceApiRateLimit(request, session.user.id);
-    if (rateLimitResponse) return rateLimitResponse;
-
-    await connectDB();
 
     const body = await request.json();
     const validation = renameCategorySchema.safeParse(body);
@@ -111,13 +95,8 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const { session, response } = await requireAuth();
+    const { session, response } = await authenticateAndConnect(request);
     if (response) return response;
-
-    const rateLimitResponse = await enforceApiRateLimit(request, session.user.id);
-    if (rateLimitResponse) return rateLimitResponse;
-
-    await connectDB();
 
     const name = request.nextUrl.searchParams.get('name');
     if (!name?.trim()) {

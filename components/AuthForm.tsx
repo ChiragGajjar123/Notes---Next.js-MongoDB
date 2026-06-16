@@ -10,36 +10,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { LogIn, UserPlus, Loader2, Eye, EyeOff, Check, X } from 'lucide-react';
 import { Header } from './Header';
 
-const MIN_PASSWORD_LENGTH = 8;
+import { PASSWORD_REQUIREMENTS, getPasswordStrength, PASSWORD_RULES } from '@/lib/validations';
+
 const MAX_NAME_LENGTH = 100;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-interface PasswordRequirement {
-  label: string;
-  test: (password: string) => boolean;
-}
-
-const PASSWORD_REQUIREMENTS: PasswordRequirement[] = [
-  { label: 'At least 8 characters', test: (p) => p.length >= MIN_PASSWORD_LENGTH },
-  { label: 'One uppercase letter', test: (p) => /[A-Z]/.test(p) },
-  { label: 'One lowercase letter', test: (p) => /[a-z]/.test(p) },
-  { label: 'One number', test: (p) => /[0-9]/.test(p) },
-  { label: 'One special character', test: (p) => /[^a-zA-Z0-9]/.test(p) },
-];
-
-function getPasswordStrength(password: string): { score: number; label: string; color: string } {
-  if (!password) return { score: 0, label: '', color: '' };
-
-  const passed = PASSWORD_REQUIREMENTS.filter((r) => r.test(password)).length;
-  const total = PASSWORD_REQUIREMENTS.length;
-  const ratio = passed / total;
-
-  if (ratio <= 0.2) return { score: ratio * 100, label: 'Very Weak', color: 'bg-red-500' };
-  if (ratio <= 0.4) return { score: ratio * 100, label: 'Weak', color: 'bg-orange-500' };
-  if (ratio <= 0.6) return { score: ratio * 100, label: 'Fair', color: 'bg-yellow-500' };
-  if (ratio <= 0.8) return { score: ratio * 100, label: 'Good', color: 'bg-blue-500' };
-  return { score: 100, label: 'Strong', color: 'bg-green-500' };
-}
+const MIN_PASSWORD_LENGTH = PASSWORD_RULES.minLength;
 
 export function AuthForm() {
   const [email, setEmail] = useState('');

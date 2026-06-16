@@ -1,44 +1,23 @@
 import mongoose from 'mongoose';
 
-let MONGODB_URI = process.env.MONGODB_URI;
-
-if (!MONGODB_URI) {
-  if (process.env.NODE_ENV === 'development') {
-    console.warn('MONGODB_URI not found, using default development URI');
-    MONGODB_URI = 'mongodb://localhost:27017/notes-app';
-  } else {
-    throw new Error('Please define the MONGODB_URI environment variable inside .env.local');
-  }
+const MONGODB_URI = process.env.MONGODB_URI || (process.env.NODE_ENV === 'development' ? 'mongodb://localhost:27017/notes-app' : '');
+if (!MONGODB_URI && process.env.NODE_ENV !== 'development') {
+  throw new Error('Please define the MONGODB_URI environment variable inside .env.local');
 }
 
-let cached = (global as any).mongoose;
-
-if (!cached) {
-  cached = (global as any).mongoose = { conn: null, promise: null };
-}
+let cached = (global as any).mongoose || ((global as any).mongoose = { conn: null, promise: null });
 
 async function connectDB() {
-  if (cached.conn) {
-    return cached.conn;
-  }
-
+  if (cached.conn) return cached.conn;
   if (!cached.promise) {
-    const opts = {
-      bufferCommands: false,
-    };
-
-    cached.promise = mongoose.connect(MONGODB_URI!, opts).then((mongoose) => {
-      return mongoose;
-    });
+    cached.promise = mongoose.connect(MONGODB_URI, { bufferCommands: false });
   }
-
   try {
     cached.conn = await cached.promise;
   } catch (e) {
     cached.promise = null;
     throw e;
   }
-
   return cached.conn;
 }
 

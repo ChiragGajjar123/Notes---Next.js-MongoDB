@@ -8,6 +8,7 @@ import connectDB from '@/lib/mongoose';
 import User from '@/lib/models/User';
 import { signupSchema, signinSchema } from '@/lib/validations';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
+import type { RateLimitConfig } from '@/lib/rate-limit';
 
 /** Maximum failed login attempts before account lockout */
 const MAX_FAILED_ATTEMPTS = 5;
@@ -17,6 +18,14 @@ const LOCKOUT_DURATION_MINUTES = 15;
 const SESSION_MAX_AGE = 30 * 24 * 60 * 60;
 /** Bcrypt salt rounds */
 const BCRYPT_ROUNDS = 12;
+
+async function enforceLimitOrThrow(key: string, config: RateLimitConfig, errorPrefix: string) {
+  const result = await checkRateLimit(key, config);
+  if (!result.success) {
+    const min = Math.ceil((result.resetAt - Date.now()) / 60000);
+    throw new Error(`${errorPrefix}. Please try again in ${min} minute(s).`);
+  }
+}
 
 export const authOptions: NextAuthOptions = {
   adapter: MongoDBAdapter(clientPromise) as any,
@@ -49,11 +58,7 @@ export const authOptions: NextAuthOptions = {
         // ── Sign In ────────────────────────────────────────────
         if (mode === 'signin') {
           // IP-based Rate Limiting for Login
-          const rateLimitResult = await checkRateLimit(`login:${ip}`, RATE_LIMITS.login);
-          if (!rateLimitResult.success) {
-            const minutesLeft = Math.ceil((rateLimitResult.resetAt - Date.now()) / (1000 * 60));
-            throw new Error(`Too many login attempts. Please try again in ${minutesLeft} minute(s).`);
-          }
+          await enforceLimitOrThrow(`login:${ip}`, RATE_LIMITS.login, 'Too many login attempts');
 
           const validation = signinSchema.safeParse({ email, password });
           if (!validation.success) {
@@ -120,11 +125,7 @@ export const authOptions: NextAuthOptions = {
 
         // ── Sign Up ────────────────────────────────────────────
         // IP-based Rate Limiting for Signup
-        const rateLimitResult = await checkRateLimit(`signup:${ip}`, RATE_LIMITS.signup);
-        if (!rateLimitResult.success) {
-          const minutesLeft = Math.ceil((rateLimitResult.resetAt - Date.now()) / (1000 * 60));
-          throw new Error(`Too many signup attempts. Please try again in ${minutesLeft} minute(s).`);
-        }
+        await enforceLimitOrThrow(`signup:${ip}`, RATE_LIMITS.signup, 'Too many signup attempts');
 
         const validation = signupSchema.safeParse({ name, email, password });
         if (!validation.success) {

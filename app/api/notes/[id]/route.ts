@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongoose';
 import Note from '@/lib/models/Note';
-import { requireAuth, validateId, enforceApiRateLimit } from '@/lib/auth-helpers';
+import { authenticateAndConnect, validateId } from '@/lib/auth-helpers';
 import { updateNoteSchema } from '@/lib/validations';
 
 export async function PUT(
@@ -10,16 +9,11 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const { session, response } = await requireAuth();
+    const { session, response } = await authenticateAndConnect(request);
     if (response) return response;
 
     const idError = validateId(id);
     if (idError) return idError;
-
-    const rateLimitResponse = await enforceApiRateLimit(request, session.user.id);
-    if (rateLimitResponse) return rateLimitResponse;
-
-    await connectDB();
 
     const body = await request.json();
     const validation = updateNoteSchema.safeParse(body);
@@ -60,16 +54,11 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const { session, response } = await requireAuth();
+    const { session, response } = await authenticateAndConnect(request);
     if (response) return response;
 
     const idError = validateId(id);
     if (idError) return idError;
-
-    const rateLimitResponse = await enforceApiRateLimit(request, session.user.id);
-    if (rateLimitResponse) return rateLimitResponse;
-
-    await connectDB();
 
     const note = await Note.findOneAndDelete({
       _id: id,
