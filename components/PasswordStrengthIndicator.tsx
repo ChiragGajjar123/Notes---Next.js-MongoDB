@@ -1,3 +1,5 @@
+'use client';
+
 import { useMemo } from 'react';
 import { Check, X } from 'lucide-react';
 import { PASSWORD_REQUIREMENTS, getPasswordStrength } from '@/lib/validations';

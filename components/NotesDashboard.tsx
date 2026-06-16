@@ -9,6 +9,7 @@ import dynamic from 'next/dynamic';
 import { Plus, Search, FileText, Pencil, Trash2, Loader2, LayoutGrid, List, Pin } from 'lucide-react';
 import { Note } from '@/types';
 import { Header } from '@/components/Header';
+import { DashboardShell } from '@/components/DashboardShell';
 import { CreateCategoryDialog } from '@/components/CreateCategoryDialog';
 import { RenameCategoryDialog } from '@/components/RenameCategoryDialog';
 import { DeleteConfirmDialog } from '@/components/DeleteConfirmDialog';
@@ -57,15 +58,7 @@ export function NotesDashboard({
   const [isChangingTheme, setIsChangingTheme] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(false);
 
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('notes-view-mode');
-      if (saved === 'list' || saved === 'grid') {
-        return saved;
-      }
-    }
-    return 'grid';
-  });
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [noteIdToDelete, setNoteIdToDelete] = useState<string | null>(null);
 
   const fetchNotes = useCallback(async (isInitial = false) => {
@@ -150,6 +143,14 @@ export function NotesDashboard({
   }, [activeCategory, editorCategories]);
 
   const isMounted = useRef(false);
+
+  // Hydration-safe: read localStorage in useEffect, not in state initializer
+  useEffect(() => {
+    const saved = localStorage.getItem('notes-view-mode');
+    if (saved === 'list' || saved === 'grid') {
+      setViewMode(saved);
+    }
+  }, []);
 
   useEffect(() => {
     if (!isMounted.current) {
@@ -288,7 +289,7 @@ export function NotesDashboard({
 
   if (isInitialLoading) {
     return (
-      <div className="min-h-screen bg-background relative transition-colors duration-500">
+      <DashboardShell>
         <Header isAuthPage={false} sessionUser={sessionUser} />
         
         <main className="container mx-auto px-3 sm:px-6 pb-4 pt-6 sm:pb-8 sm:pt-8 relative z-10 animate-pulse">
@@ -332,7 +333,7 @@ export function NotesDashboard({
             </div>
           </div>
         </main>
-      </div>
+      </DashboardShell>
     );
   }
 
@@ -351,7 +352,7 @@ export function NotesDashboard({
   const unpinnedNotes = filteredNotes.filter(note => !note.isPinned);
 
   return (
-    <div className="min-h-screen bg-background relative transition-colors duration-500">
+    <DashboardShell>
       <Header
         showArchived={showArchived}
         setShowArchived={setShowArchived}
@@ -620,6 +621,6 @@ export function NotesDashboard({
         onConfirm={executeDeleteNote}
         isDeleting={isDeletingNoteId !== null}
       />
-    </div>
+    </DashboardShell>
   );
 }

@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Sparkles, Archive, Sun, Moon, LogOut, Loader2 } from 'lucide-react';
+import { Archive, Sun, Moon, LogOut, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSession, signOut } from 'next-auth/react';
+import { HeaderBrand } from '@/components/HeaderBrand';
 
 interface HeaderProps {
   isAuthPage?: boolean;
@@ -47,12 +48,7 @@ export function Header({
       <div className="container mx-auto px-3 sm:px-6 py-3 sm:py-4">
         <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
           <div className="flex min-w-0 flex-wrap items-center gap-2 sm:gap-3">
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-primary animate-pulse" />
-              <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                Notes
-              </h1>
-            </div>
+            <HeaderBrand />
             {!isAuthPage && setShowArchived && (
               <Button
                 variant={showArchived ? 'secondary' : 'ghost'}
