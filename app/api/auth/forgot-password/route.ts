@@ -8,7 +8,7 @@ import { RATE_LIMITS } from '@/lib/rate-limit';
 import { isEmailConfigured, sendPasswordResetEmail } from '@/lib/email';
 
 const SUCCESS_MESSAGE =
-  'If an account with that email exists, a password reset link has been sent to your inbox.';
+  'A password reset link has been sent to your email address.';
 
 export async function POST(request: Request) {
   try {
