@@ -125,6 +125,7 @@ export function AuthForm() {
         password,
         name: isSignUp ? trimmedName : '',
         mode: isSignUp ? 'signup' : 'signin',
+        callbackUrl: '/',
         redirect: false,
       });
 
@@ -136,7 +137,7 @@ export function AuthForm() {
         }));
       } else {
         await getSession();
-        router.replace(result?.url || '/');
+        router.replace('/');
         router.refresh();
       }
     } catch {
