@@ -19,15 +19,30 @@ const MAX_NAME_LENGTH = 100;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function AuthForm() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-  const [isSignUp, setIsSignUp] = useState(false);
-  const [isForgot, setIsForgot] = useState(false);
-  const [forgotSuccess, setForgotSuccess] = useState('');
-  const [resetUrl, setResetUrl] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [state, setState] = useState({
+    email: '',
+    password: '',
+    verifyPassword: '',
+    name: '',
+    isSignUp: false,
+    isForgot: false,
+    forgotSuccess: '',
+    resetUrl: '',
+    isLoading: false,
+    error: '',
+  });
+  const {
+    email,
+    password,
+    verifyPassword,
+    name,
+    isSignUp,
+    isForgot,
+    forgotSuccess,
+    resetUrl,
+    isLoading,
+    error,
+  } = state;
   const router = useRouter();
 
   // Prefetch the dashboard resources to eliminate lag after successful login
@@ -44,15 +59,12 @@ export function AuthForm() {
     e.preventDefault();
     const trimmedEmail = email.trim().toLowerCase();
     if (!EMAIL_PATTERN.test(trimmedEmail)) {
-      setError('Please enter a valid email address.');
+      setState(prev => ({ ...prev, error: 'Please enter a valid email address.' }));
       return;
     }
 
     if (isForgot) {
-      setIsLoading(true);
-      setError('');
-      setForgotSuccess('');
-      setResetUrl('');
+      setState(prev => ({ ...prev, isLoading: true, error: '', forgotSuccess: '', resetUrl: '' }));
 
       try {
         const response = await fetch('/api/auth/forgot-password', {
@@ -62,17 +74,18 @@ export function AuthForm() {
         });
         const data = await response.json();
         if (response.ok) {
-          setForgotSuccess(data.message);
-          if (data.resetUrl) {
-            setResetUrl(data.resetUrl);
-          }
+          setState(prev => ({
+            ...prev,
+            forgotSuccess: data.message,
+            resetUrl: data.resetUrl || '',
+          }));
         } else {
-          setError(data.error || 'Failed to send reset link.');
+          setState(prev => ({ ...prev, error: data.error || 'Failed to send reset link.' }));
         }
       } catch {
-        setError('An unexpected error occurred. Please try again.');
+        setState(prev => ({ ...prev, error: 'An unexpected error occurred. Please try again.' }));
       } finally {
-        setIsLoading(false);
+        setState(prev => ({ ...prev, isLoading: false }));
       }
       return;
     }
@@ -80,27 +93,31 @@ export function AuthForm() {
     const trimmedName = name.trim();
 
     if (!password.trim()) {
-      setError('Please enter your password.');
+      setState(prev => ({ ...prev, error: 'Please enter your password.' }));
       return;
     }
 
     if (isSignUp && !allRequirementsMet) {
-      setError('Password does not meet all requirements.');
+      setState(prev => ({ ...prev, error: 'Password does not meet all requirements.' }));
       return;
     }
 
     if (isSignUp && (!trimmedName || trimmedName.toLowerCase() === 'undefined')) {
-      setError('Please enter your name.');
+      setState(prev => ({ ...prev, error: 'Please enter your name.' }));
       return;
     }
 
     if (isSignUp && trimmedName.length > MAX_NAME_LENGTH) {
-      setError(`Name must be ${MAX_NAME_LENGTH} characters or fewer.`);
+      setState(prev => ({ ...prev, error: `Name must be ${MAX_NAME_LENGTH} characters or fewer.` }));
       return;
     }
 
-    setIsLoading(true);
-    setError('');
+    if (isSignUp && password !== verifyPassword) {
+      setState(prev => ({ ...prev, error: 'Passwords do not match. Please try again.' }));
+      return;
+    }
+
+    setState(prev => ({ ...prev, isLoading: true, error: '' }));
 
     try {
       const result = await signIn('credentials', {
@@ -112,16 +129,22 @@ export function AuthForm() {
       });
 
       if (result?.error) {
-        setError(getAuthErrorMessage(result.error, isSignUp));
-        setIsLoading(false);
+        setState(prev => ({
+          ...prev,
+          error: getAuthErrorMessage(result.error ?? '', isSignUp),
+          isLoading: false,
+        }));
       } else {
         await getSession();
         router.replace(result?.url || '/');
         router.refresh();
       }
     } catch {
-      setError('An unexpected error occurred. Please try again.');
-      setIsLoading(false);
+      setState(prev => ({
+        ...prev,
+        error: 'An unexpected error occurred. Please try again.',
+        isLoading: false,
+      }));
     }
   };
 
@@ -131,6 +154,9 @@ export function AuthForm() {
     }
     if (authError.includes('Account is locked')) {
       return authError;
+    }
+    if (authError.includes('User not found')) {
+      return 'No account exists with this email. Please create an account to continue.';
     }
     if (signingUp) {
       // Show specific validation errors from Zod
@@ -176,7 +202,7 @@ export function AuthForm() {
                     id="name"
                     type="text"
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={(e) => setState(prev => ({ ...prev, name: e.target.value }))}
                     placeholder="Enter your name"
                     autoComplete="name"
                     maxLength={MAX_NAME_LENGTH}
@@ -192,7 +218,7 @@ export function AuthForm() {
                   id="email"
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => setState(prev => ({ ...prev, email: e.target.value }))}
                   placeholder="Enter your email"
                   autoComplete="email"
                   required
@@ -208,10 +234,7 @@ export function AuthForm() {
                       <button
                         type="button"
                         onClick={() => {
-                          setIsForgot(true);
-                          setError('');
-                          setForgotSuccess('');
-                          setResetUrl('');
+                          setState(prev => ({ ...prev, isForgot: true, error: '', forgotSuccess: '', resetUrl: '' }));
                         }}
                         className="text-xs text-primary hover:text-primary/80 transition-colors hover:underline font-semibold"
                       >
@@ -222,7 +245,7 @@ export function AuthForm() {
                   <PasswordInput
                     id="password"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => setState(prev => ({ ...prev, password: e.target.value }))}
                     placeholder="Enter your password"
                     autoComplete={isSignUp ? 'new-password' : 'current-password'}
                     required={!isForgot}
@@ -230,7 +253,22 @@ export function AuthForm() {
 
                   {/* Password Strength Indicator (signup only) */}
                   {isSignUp && (
-                    <PasswordStrengthIndicator password={password} />
+                    <>
+                      <PasswordStrengthIndicator password={password} />
+                      <div className="space-y-1.5 mt-4">
+                        <Label htmlFor="verifyPassword" className="text-xs font-semibold text-muted-foreground tracking-wider uppercase pl-1">
+                          Verify Password
+                        </Label>
+                        <PasswordInput
+                          id="verifyPassword"
+                          value={verifyPassword}
+                          onChange={(e) => setState(prev => ({ ...prev, verifyPassword: e.target.value }))}
+                          placeholder="Re-enter your password"
+                          autoComplete="new-password"
+                          required={isSignUp}
+                        />
+                      </div>
+                    </>
                   )}
                 </div>
               )}
@@ -299,10 +337,7 @@ export function AuthForm() {
                 <button
                   type="button"
                   onClick={() => {
-                    setIsForgot(false);
-                    setError('');
-                    setForgotSuccess('');
-                    setResetUrl('');
+                    setState(prev => ({ ...prev, isForgot: false, error: '', forgotSuccess: '', resetUrl: '' }));
                   }}
                   className="text-xs sm:text-sm text-primary hover:text-primary/80 font-bold transition-all animate-in fade-in duration-300"
                 >
@@ -312,9 +347,13 @@ export function AuthForm() {
                 <button
                   type="button"
                   onClick={() => {
-                    setIsSignUp(!isSignUp);
-                    setError('');
-                    setPassword('');
+                    setState(prev => ({
+                      ...prev,
+                      isSignUp: !prev.isSignUp,
+                      error: '',
+                      password: '',
+                      verifyPassword: '',
+                    }));
                   }}
                   className="text-xs sm:text-sm text-primary hover:text-primary/80 font-bold transition-all"
                 >

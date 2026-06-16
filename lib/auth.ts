@@ -27,6 +27,7 @@ async function enforceLimitOrThrow(key: string, config: RateLimitConfig, errorPr
 }
 
 export const authOptions: NextAuthOptions = {
+  debug: true,
   adapter: MongoDBAdapter(clientPromise) as NextAuthOptions['adapter'],
   providers: [
     CredentialsProvider({
@@ -57,7 +58,11 @@ export const authOptions: NextAuthOptions = {
         // ── Sign In ────────────────────────────────────────────
         if (mode === 'signin') {
           // IP-based Rate Limiting for Login
-          await enforceLimitOrThrow(`login:${ip}`, RATE_LIMITS.login, 'Too many login attempts');
+          try {
+            await enforceLimitOrThrow(`login:${ip}`, RATE_LIMITS.login, 'Too many login attempts');
+          } catch {
+            return null;
+          }
 
           const validation = signinSchema.safeParse({ email, password });
           if (!validation.success) {
@@ -68,18 +73,13 @@ export const authOptions: NextAuthOptions = {
             '+password +failedLoginAttempts +lockedUntil'
           );
 
-          if (!user?.password) {
+          if (!user || !user.password) {
             return null;
           }
 
           // Check account lockout
           if (user.lockedUntil && user.lockedUntil > new Date()) {
-            const minutesLeft = Math.ceil(
-              (user.lockedUntil.getTime() - Date.now()) / (1000 * 60)
-            );
-            throw new Error(
-              `Account is locked. Try again in ${minutesLeft} minute(s).`
-            );
+            return null;
           }
 
           const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -124,17 +124,20 @@ export const authOptions: NextAuthOptions = {
 
         // ── Sign Up ────────────────────────────────────────────
         // IP-based Rate Limiting for Signup
-        await enforceLimitOrThrow(`signup:${ip}`, RATE_LIMITS.signup, 'Too many signup attempts');
+        try {
+          await enforceLimitOrThrow(`signup:${ip}`, RATE_LIMITS.signup, 'Too many signup attempts');
+        } catch {
+          return null;
+        }
 
         const validation = signupSchema.safeParse({ name, email, password });
         if (!validation.success) {
-          const firstError = validation.error.issues[0]?.message;
-          throw new Error(firstError || 'Invalid signup data.');
+          return null;
         }
 
         const existingUser = await User.findOne({ email });
         if (existingUser) {
-          throw new Error('Account already exists. Please sign in.');
+          return null;
         }
 
         try {
@@ -159,9 +162,9 @@ export const authOptions: NextAuthOptions = {
             'code' in error &&
             error.code === 11000
           ) {
-            throw new Error('Account already exists. Please sign in.');
+            return null;
           }
-          throw error;
+          return null;
         }
       },
     }),

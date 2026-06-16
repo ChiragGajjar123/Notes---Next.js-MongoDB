@@ -145,6 +145,7 @@ export function NotesDashboard({
   useEffect(() => {
     const saved = localStorage.getItem('notes-view-mode');
     if (saved === 'list' || saved === 'grid') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setViewMode(saved);
     }
   }, []);

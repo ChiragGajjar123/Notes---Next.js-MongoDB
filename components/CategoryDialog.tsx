@@ -21,8 +21,10 @@ export function CategoryDialog({ isOpen, onClose, mode, categoryToRename, onSucc
   useEffect(() => {
     if (isOpen) {
       if (mode === 'rename' && categoryToRename) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setCategoryName(categoryToRename);
       } else {
+         
         setCategoryName('');
       }
     }
