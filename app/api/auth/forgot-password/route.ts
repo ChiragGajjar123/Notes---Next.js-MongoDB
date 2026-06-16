@@ -37,12 +37,14 @@ export async function POST(request: Request) {
     await connectDB();
     const user = await User.findOne({ email });
 
-    // For security reasons, do not reveal if the user exists or not (prevent email enumeration)
-    const successResponse = { message: SUCCESS_MESSAGE };
-
     if (!user) {
-      return NextResponse.json(successResponse);
+      return NextResponse.json(
+        { error: 'No account found with this email address.' },
+        { status: 404 }
+      );
     }
+
+    const successResponse = { message: SUCCESS_MESSAGE };
 
     // 4. Generate random secure token and SHA-256 hash it
     const rawToken = crypto.randomBytes(32).toString('hex');
