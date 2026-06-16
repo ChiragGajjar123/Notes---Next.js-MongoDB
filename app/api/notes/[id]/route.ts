@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Note from '@/lib/models/Note';
-import { authenticateAndConnect, validateId } from '@/lib/auth-helpers';
+import { apiError, authenticateAndConnect, validateId, validationError } from '@/lib/auth-helpers';
 import { updateNoteSchema } from '@/lib/validations';
 
 export async function PUT(
@@ -19,11 +19,7 @@ export async function PUT(
     const validation = updateNoteSchema.safeParse(body);
 
     if (!validation.success) {
-      const errors = validation.error.issues.map((e: { message: string }) => e.message);
-      return NextResponse.json(
-        { error: errors[0], errors },
-        { status: 400 }
-      );
+      return validationError(validation);
     }
 
     const updateData = validation.data;
@@ -35,16 +31,13 @@ export async function PUT(
     );
 
     if (!note) {
-      return NextResponse.json({ error: 'Note not found' }, { status: 404 });
+      return apiError('Note not found', 404);
     }
 
     return NextResponse.json(note);
   } catch (error) {
     console.error('Error updating note:', error);
-    return NextResponse.json(
-      { error: 'Failed to update note' },
-      { status: 500 }
-    );
+    return apiError('Failed to update note');
   }
 }
 
@@ -66,15 +59,12 @@ export async function DELETE(
     });
 
     if (!note) {
-      return NextResponse.json({ error: 'Note not found' }, { status: 404 });
+      return apiError('Note not found', 404);
     }
 
     return NextResponse.json({ message: 'Note deleted successfully' });
   } catch (error) {
     console.error('Error deleting note:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete note' },
-      { status: 500 }
-    );
+    return apiError('Failed to delete note');
   }
 }

@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import connectDB from '@/lib/mongoose';
 import User from '@/lib/models/User';
 import { forgotPasswordSchema } from '@/lib/validations';
-import { enforceRateLimit } from '@/lib/auth-helpers';
+import { apiError, enforceRateLimit, validationError } from '@/lib/auth-helpers';
 import { RATE_LIMITS } from '@/lib/rate-limit';
 import { isEmailConfigured, sendPasswordResetEmail } from '@/lib/email';
 
@@ -25,10 +25,7 @@ export async function POST(request: Request) {
     const validation = forgotPasswordSchema.safeParse(body);
 
     if (!validation.success) {
-      return NextResponse.json(
-        { error: validation.error.issues[0]?.message || 'Invalid email address.' },
-        { status: 400 }
-      );
+      return validationError(validation, 'Invalid email address.');
     }
 
     const email = validation.data.email;
@@ -38,10 +35,7 @@ export async function POST(request: Request) {
     const user = await User.findOne({ email });
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'No account found with this email address.' },
-        { status: 404 }
-      );
+      return apiError('No account found with this email address.', 404);
     }
 
     const successResponse = { message: SUCCESS_MESSAGE };
@@ -81,9 +75,6 @@ export async function POST(request: Request) {
     }
 
     console.error('Failed to send password reset email:', emailResult.error);
-    console.log(
-      `\n========================================\n[PASSWORD RESET LINK]: ${resetUrl}\n========================================\n`
-    );
 
     // Dev fallback when email is not configured or delivery fails
     if (process.env.NODE_ENV === 'development' || !isEmailConfigured()) {
@@ -93,9 +84,6 @@ export async function POST(request: Request) {
     return NextResponse.json(responsePayload);
   } catch (error) {
     console.error('Forgot password error:', error);
-    return NextResponse.json(
-      { error: 'An unexpected error occurred. Please try again.' },
-      { status: 500 }
-    );
+    return apiError('An unexpected error occurred. Please try again.');
   }
 }

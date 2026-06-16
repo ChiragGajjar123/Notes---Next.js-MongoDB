@@ -6,6 +6,23 @@ import { checkRateLimit, getClientIp, RATE_LIMITS } from '@/lib/rate-limit';
 import type { RateLimitConfig } from '@/lib/rate-limit';
 import connectDB from '@/lib/mongoose';
 
+type ValidationFailure = {
+  success: false;
+  error: { issues: { message: string }[] };
+};
+
+export function apiError(error: string, status = 500) {
+  return NextResponse.json({ error }, { status });
+}
+
+export function validationError(validation: ValidationFailure, fallback = 'Invalid input') {
+  const errors = validation.error.issues.map((issue) => issue.message);
+  return NextResponse.json(
+    { error: errors[0] || fallback, errors },
+    { status: 400 }
+  );
+}
+
 export async function getAuthSession() {
   return getServerSession(authOptions);
 }
@@ -16,19 +33,14 @@ export async function requireAuth(): Promise<
 > {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
-    return {
-      response: NextResponse.json(
-        { error: 'Unauthorized. Please sign in.' },
-        { status: 401 }
-      ),
-    };
+    return { response: apiError('Unauthorized. Please sign in.', 401) };
   }
   return { session };
 }
 
 export function validateId(id: string): NextResponse | null {
   if (!isValidObjectId(id)) {
-    return NextResponse.json({ error: 'Invalid ID format.' }, { status: 400 });
+    return apiError('Invalid ID format.', 400);
   }
   return null;
 }

@@ -27,7 +27,7 @@ async function enforceLimitOrThrow(key: string, config: RateLimitConfig, errorPr
 }
 
 export const authOptions: NextAuthOptions = {
-  debug: true,
+  debug: process.env.NODE_ENV === 'development',
   adapter: MongoDBAdapter(clientPromise) as NextAuthOptions['adapter'],
   providers: [
     CredentialsProvider({

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Note from '@/lib/models/Note';
 import User from '@/lib/models/User';
-import { authenticateAndConnect } from '@/lib/auth-helpers';
+import { apiError, authenticateAndConnect, validationError } from '@/lib/auth-helpers';
 import { createCategorySchema, renameCategorySchema } from '@/lib/validations';
 
 export async function GET(request: NextRequest) {
@@ -11,10 +11,7 @@ export async function GET(request: NextRequest) {
     const user = await User.findById(session.user.id);
     return NextResponse.json({ categories: user?.categories || [] });
   } catch {
-    return NextResponse.json(
-      { error: 'Failed to fetch categories' },
-      { status: 500 }
-    );
+    return apiError('Failed to fetch categories');
   }
 }
 
@@ -27,10 +24,7 @@ export async function POST(request: NextRequest) {
     const validation = createCategorySchema.safeParse(body);
 
     if (!validation.success) {
-      return NextResponse.json(
-        { error: validation.error.issues[0]?.message || 'Invalid input' },
-        { status: 400 }
-      );
+      return validationError(validation);
     }
 
     const user = await User.findByIdAndUpdate(
@@ -39,17 +33,14 @@ export async function POST(request: NextRequest) {
       { new: true }
     );
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return apiError('User not found', 404);
     }
     return NextResponse.json({
       success: true,
       categories: user.categories,
     });
   } catch {
-    return NextResponse.json(
-      { error: 'Failed to create category' },
-      { status: 500 }
-    );
+    return apiError('Failed to create category');
   }
 }
 
@@ -62,10 +53,7 @@ export async function PUT(request: NextRequest) {
     const validation = renameCategorySchema.safeParse(body);
 
     if (!validation.success) {
-      return NextResponse.json(
-        { error: validation.error.issues[0]?.message || 'Invalid parameters' },
-        { status: 400 }
-      );
+      return validationError(validation, 'Invalid parameters');
     }
 
     const { oldName, newName } = validation.data;
@@ -86,10 +74,7 @@ export async function PUT(request: NextRequest) {
       modifiedCount: result.modifiedCount,
     });
   } catch {
-    return NextResponse.json(
-      { error: 'Failed to rename' },
-      { status: 500 }
-    );
+    return apiError('Failed to rename');
   }
 }
 
@@ -100,10 +85,7 @@ export async function DELETE(request: NextRequest) {
 
     const name = request.nextUrl.searchParams.get('name');
     if (!name?.trim()) {
-      return NextResponse.json(
-        { error: 'Category name is required.' },
-        { status: 400 }
-      );
+      return apiError('Category name is required.', 400);
     }
 
     await User.updateOne(
@@ -118,9 +100,6 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch {
-    return NextResponse.json(
-      { error: 'Failed to delete' },
-      { status: 500 }
-    );
+    return apiError('Failed to delete');
   }
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Note from '@/lib/models/Note';
-import { authenticateAndConnect } from '@/lib/auth-helpers';
+import { apiError, authenticateAndConnect, validationError } from '@/lib/auth-helpers';
 import { createNoteSchema } from '@/lib/validations';
 
 export async function GET(request: NextRequest) {
@@ -33,10 +33,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(notes);
   } catch (error) {
     console.error('Error fetching notes:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch notes' },
-      { status: 500 }
-    );
+    return apiError('Failed to fetch notes');
   }
 }
 
@@ -49,11 +46,7 @@ export async function POST(request: NextRequest) {
     const validation = createNoteSchema.safeParse(body);
 
     if (!validation.success) {
-      const errors = validation.error.issues.map((e: { message: string }) => e.message);
-      return NextResponse.json(
-        { error: errors[0], errors },
-        { status: 400 }
-      );
+      return validationError(validation);
     }
 
     const { title, content, category, tags, color } = validation.data;
@@ -70,9 +63,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(note, { status: 201 });
   } catch (error) {
     console.error('Error creating note:', error);
-    return NextResponse.json(
-      { error: 'Failed to create note' },
-      { status: 500 }
-    );
+    return apiError('Failed to create note');
   }
 }

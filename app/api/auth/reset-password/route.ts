@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 import connectDB from '@/lib/mongoose';
 import User from '@/lib/models/User';
 import { resetPasswordSchema } from '@/lib/validations';
-import { enforceRateLimit } from '@/lib/auth-helpers';
+import { apiError, enforceRateLimit, validationError } from '@/lib/auth-helpers';
 import { RATE_LIMITS } from '@/lib/rate-limit';
 
 export async function POST(request: Request) {
@@ -22,18 +22,12 @@ export async function POST(request: Request) {
     const { token, email, password } = body;
 
     if (!token || !email) {
-      return NextResponse.json(
-        { error: 'Token and email are required.' },
-        { status: 400 }
-      );
+      return apiError('Token and email are required.', 400);
     }
 
     const validation = resetPasswordSchema.safeParse({ password });
     if (!validation.success) {
-      return NextResponse.json(
-        { error: validation.error.issues[0]?.message || 'Invalid password.' },
-        { status: 400 }
-      );
+      return validationError(validation, 'Invalid password.');
     }
 
     // 3. Connect to DB and query the user
@@ -43,10 +37,7 @@ export async function POST(request: Request) {
     );
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'Invalid or expired password reset token.' },
-        { status: 400 }
-      );
+      return apiError('Invalid or expired password reset token.', 400);
     }
 
     // 4. Verify the reset token and expiration
@@ -57,10 +48,7 @@ export async function POST(request: Request) {
       !user.resetPasswordExpires ||
       user.resetPasswordExpires < new Date()
     ) {
-      return NextResponse.json(
-        { error: 'Invalid or expired password reset token.' },
-        { status: 400 }
-      );
+      return apiError('Invalid or expired password reset token.', 400);
     }
 
     // 5. Hash new password and update the user record (reset lockouts/attempts too)
@@ -88,9 +76,6 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error('Reset password error:', error);
-    return NextResponse.json(
-      { error: 'An unexpected error occurred. Please try again.' },
-      { status: 500 }
-    );
+    return apiError('An unexpected error occurred. Please try again.');
   }
 }
