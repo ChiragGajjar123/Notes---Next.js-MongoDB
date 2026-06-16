@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,15 +15,32 @@ const NoteEditor = dynamic(() => import('@/components/NoteEditor').then(mod => m
   ssr: false
 });
 
-export function NotesDashboard() {
+interface NotesDashboardProps {
+  initialNotes: Note[];
+  initialCategories: string[];
+  initialTheme: string;
+  sessionUser: {
+    id: string;
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+  };
+}
+
+export function NotesDashboard({
+  initialNotes,
+  initialCategories,
+  initialTheme,
+  sessionUser,
+}: NotesDashboardProps) {
   const { data: session, status } = useSession();
-  const [notes, setNotes] = useState<Note[]>([]);
+  const [notes, setNotes] = useState<Note[]>(initialNotes);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showArchived, setShowArchived] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(initialTheme === 'dark');
 
   const [isRenameOpen, setIsRenameOpen] = useState(false);
   const [categoryToRename, setCategoryToRename] = useState<string | null>(null);
@@ -31,7 +48,7 @@ export function NotesDashboard() {
   const [isDeleteWarnOpen, setIsDeleteWarnOpen] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
 
-  const [savedCategories, setSavedCategories] = useState<string[]>([]);
+  const [savedCategories, setSavedCategories] = useState<string[]>(initialCategories);
   const [isCreateCategoryOpen, setIsCreateCategoryOpen] = useState(false);
   const [newCreatedCategory, setNewCreatedCategory] = useState('');
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
@@ -40,7 +57,7 @@ export function NotesDashboard() {
   const [archivingNoteId, setArchivingNoteId] = useState<string | null>(null);
   const [deletingCategoryName, setDeletingCategoryName] = useState<string | null>(null);
   const [isChangingTheme, setIsChangingTheme] = useState(false);
-  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(false);
 
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
     if (typeof window !== 'undefined') {
@@ -149,20 +166,15 @@ export function NotesDashboard() {
       : activeCategory;
   }, [activeCategory, editorCategories]);
 
+  const isMounted = useRef(false);
+
   useEffect(() => {
-    if (session) {
-      const init = async () => {
-        setIsInitialLoading(true);
-        await Promise.all([
-          fetchCategories(),
-          fetchNotes(false),
-          fetchUserSettings()
-        ]);
-        setIsInitialLoading(false);
-      };
-      init();
+    if (!isMounted.current) {
+      isMounted.current = true;
+      return;
     }
-  }, [session, showArchived, fetchCategories, fetchNotes, fetchUserSettings]);
+    fetchNotes(false);
+  }, [showArchived, fetchNotes]);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -340,10 +352,10 @@ export function NotesDashboard() {
     }
   };
 
-  if (status === 'loading' || (session && isInitialLoading)) {
+  if (isInitialLoading) {
     return (
       <div className="min-h-screen bg-background relative transition-colors duration-500">
-        <Header isAuthPage={false} />
+        <Header isAuthPage={false} sessionUser={sessionUser} />
         
         <main className="container mx-auto px-3 sm:px-6 pb-4 pt-6 sm:pb-8 sm:pt-8 relative z-10 animate-pulse">
           <div className="flex flex-col lg:flex-row gap-4 sm:gap-8">
@@ -390,7 +402,7 @@ export function NotesDashboard() {
     );
   }
 
-  if (!session) {
+  if (status === 'unauthenticated') {
     return null;
   }
 
@@ -412,6 +424,7 @@ export function NotesDashboard() {
         isDarkMode={isDarkMode}
         toggleDarkMode={toggleDarkMode}
         isChangingTheme={isChangingTheme}
+        sessionUser={sessionUser}
       />
 
       <main className="container mx-auto px-3 sm:px-6 pb-6 pt-6 sm:pb-8 sm:pt-8 relative z-10">

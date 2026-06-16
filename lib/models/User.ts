@@ -69,7 +69,4 @@ const UserSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Force schema recompilation for Next.js HMR
-delete mongoose.models.User;
-
-export default mongoose.model('User', UserSchema);
+export default mongoose.models.User || mongoose.model('User', UserSchema);

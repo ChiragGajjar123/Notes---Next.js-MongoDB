@@ -47,8 +47,6 @@ NoteSchema.index({ userId: 1, createdAt: -1 });
 NoteSchema.index({ userId: 1, title: 'text', content: 'text' });
 NoteSchema.index({ userId: 1, category: 1 });
 NoteSchema.index({ userId: 1, tags: 1 });
+NoteSchema.index({ userId: 1, isArchived: 1, isPinned: -1, updatedAt: -1 });
 
-// Force schema recompilation for Next.js HMR
-delete mongoose.models.Note;
-
-export default mongoose.model('Note', NoteSchema);
+export default mongoose.models.Note || mongoose.model('Note', NoteSchema);

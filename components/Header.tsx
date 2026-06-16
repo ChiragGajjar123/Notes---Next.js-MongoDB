@@ -12,6 +12,12 @@ interface HeaderProps {
   isDarkMode?: boolean;
   toggleDarkMode?: () => void;
   isChangingTheme?: boolean;
+  sessionUser?: {
+    id: string;
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+  } | null;
 }
 
 export function Header({
@@ -21,6 +27,7 @@ export function Header({
   isDarkMode,
   toggleDarkMode,
   isChangingTheme = false,
+  sessionUser = null,
 }: HeaderProps) {
   const { data: session } = useSession();
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -60,10 +67,10 @@ export function Header({
             )}
           </div>
 
-          {!isAuthPage && session && (
+          {!isAuthPage && (session?.user || sessionUser) && (
             <div className="flex min-w-0 flex-1 items-center justify-end gap-1.5 sm:gap-3">
               <span className="min-w-0 truncate text-xs font-medium text-muted-foreground sm:text-sm">
-                Hi, <span className="text-foreground">{session.user?.name}</span>
+                Hi, <span className="text-foreground">{(session?.user || sessionUser)?.name}</span>
               </span>
               {toggleDarkMode && (
                 <Button
