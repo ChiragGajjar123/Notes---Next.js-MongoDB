@@ -6,14 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { NoteCard } from '@/components/NoteCard';
 import dynamic from 'next/dynamic';
-import { Plus, Search, FileText, Pencil, Trash2, Loader2, LayoutGrid, List, Pin } from 'lucide-react';
+import { Plus, Search, FileText, Pencil, Trash2, Loader2, LayoutGrid, List, Pin, AlertTriangle } from 'lucide-react';
 import { Note } from '@/types';
 import { Header } from '@/components/Header';
-import { DashboardShell } from '@/components/DashboardShell';
-import { CreateCategoryDialog } from '@/components/CreateCategoryDialog';
-import { RenameCategoryDialog } from '@/components/RenameCategoryDialog';
-import { DeleteConfirmDialog } from '@/components/DeleteConfirmDialog';
-import { CategoryDeleteWarnDialog } from '@/components/CategoryDeleteWarnDialog';
+import { CategoryDialog } from '@/components/CategoryDialog';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 
 const NoteEditor = dynamic(() => import('@/components/NoteEditor').then(mod => mod.NoteEditor), {
   ssr: false
@@ -289,7 +286,7 @@ export function NotesDashboard({
 
   if (isInitialLoading) {
     return (
-      <DashboardShell>
+      <div className="min-h-screen bg-background relative transition-colors duration-500">
         <Header isAuthPage={false} sessionUser={sessionUser} />
         
         <main className="container mx-auto px-3 sm:px-6 pb-4 pt-6 sm:pb-8 sm:pt-8 relative z-10 animate-pulse">
@@ -333,7 +330,7 @@ export function NotesDashboard({
             </div>
           </div>
         </main>
-      </DashboardShell>
+      </div>
     );
   }
 
@@ -348,11 +345,35 @@ export function NotesDashboard({
     return notes.filter(n => n.category === categoryName).length;
   };
 
+  const renderNoteGrid = (notesList: Note[]) => {
+    return (
+      <div className={viewMode === 'grid' 
+        ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-5 sm:gap-6" 
+        : "flex flex-col gap-4"
+      }>
+        {notesList.map((note) => (
+          <div key={note._id} className="animate-in fade-in zoom-in duration-300">
+            <NoteCard
+              note={note}
+              onEdit={handleEditNote}
+              onDelete={handleDeleteNoteTrigger}
+              onTogglePin={handleTogglePin}
+              onToggleArchive={handleToggleArchive}
+              isPinning={pinningNoteId === note._id}
+              isArchiving={archivingNoteId === note._id}
+              isDeleting={isDeletingNoteId === note._id}
+            />
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   const pinnedNotes = filteredNotes.filter(note => note.isPinned);
   const unpinnedNotes = filteredNotes.filter(note => !note.isPinned);
 
   return (
-    <DashboardShell>
+    <div className="min-h-screen bg-background relative transition-colors duration-500">
       <Header
         showArchived={showArchived}
         setShowArchived={setShowArchived}
@@ -521,25 +542,7 @@ export function NotesDashboard({
                     <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground/80 flex items-center gap-1.5 pl-1">
                       <Pin className="h-3 w-3 fill-primary text-primary rotate-45" /> Pinned Notes ({pinnedNotes.length})
                     </h3>
-                    <div className={viewMode === 'grid' 
-                      ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-5 sm:gap-6" 
-                      : "flex flex-col gap-4"
-                    }>
-                      {pinnedNotes.map((note) => (
-                        <div key={note._id} className="animate-in fade-in zoom-in duration-300">
-                          <NoteCard
-                            note={note}
-                            onEdit={handleEditNote}
-                            onDelete={handleDeleteNoteTrigger}
-                            onTogglePin={handleTogglePin}
-                            onToggleArchive={handleToggleArchive}
-                            isPinning={pinningNoteId === note._id}
-                            isArchiving={archivingNoteId === note._id}
-                            isDeleting={isDeletingNoteId === note._id}
-                          />
-                        </div>
-                      ))}
-                    </div>
+                    {renderNoteGrid(pinnedNotes)}
                   </div>
                 )}
 
@@ -551,25 +554,7 @@ export function NotesDashboard({
                         Other Notes ({unpinnedNotes.length})
                       </h3>
                     )}
-                    <div className={viewMode === 'grid' 
-                      ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-5 sm:gap-6" 
-                      : "flex flex-col gap-4"
-                    }>
-                      {unpinnedNotes.map((note) => (
-                        <div key={note._id} className="animate-in fade-in zoom-in duration-300">
-                          <NoteCard
-                            note={note}
-                            onEdit={handleEditNote}
-                            onDelete={handleDeleteNoteTrigger}
-                            onTogglePin={handleTogglePin}
-                            onToggleArchive={handleToggleArchive}
-                            isPinning={pinningNoteId === note._id}
-                            isArchiving={archivingNoteId === note._id}
-                            isDeleting={isDeletingNoteId === note._id}
-                          />
-                        </div>
-                      ))}
-                    </div>
+                    {renderNoteGrid(unpinnedNotes)}
                   </div>
                 )}
               </div>
@@ -587,19 +572,20 @@ export function NotesDashboard({
         defaultCategory={editorDefaultCategory}
       />
 
-      <CreateCategoryDialog
+      <CategoryDialog
         isOpen={isCreateCategoryOpen}
         onClose={() => setIsCreateCategoryOpen(false)}
+        mode="create"
         onSuccess={async (categoryName) => {
           await fetchCategories();
           setSelectedCategory(categoryName);
         }}
       />
 
-      <RenameCategoryDialog
-        key={categoryToRename || ''}
+      <CategoryDialog
         isOpen={categoryToRename !== null}
         onClose={() => setCategoryToRename(null)}
+        mode="rename"
         categoryToRename={categoryToRename}
         onSuccess={async (newName) => {
           if (selectedCategory === categoryToRename) {
@@ -610,17 +596,33 @@ export function NotesDashboard({
         }}
       />
 
-      <CategoryDeleteWarnDialog
+      <ConfirmDialog
         isOpen={isDeleteWarnOpen}
         onClose={() => setIsDeleteWarnOpen(false)}
+        title="Cannot Delete Category"
+        icon={<AlertTriangle className="h-6 w-6 text-destructive" />}
+        description={
+          <>
+            Categories cannot be deleted while they still contain notes.
+            <br /><br />
+            Please edit your notes to place them in a different category, or delete them first. Once empty, this category will automatically be cleared from your sidebar.
+          </>
+        }
+        cancelLabel="Understand"
       />
 
-      <DeleteConfirmDialog
+      <ConfirmDialog
         isOpen={noteIdToDelete !== null}
         onClose={() => setNoteIdToDelete(null)}
         onConfirm={executeDeleteNote}
-        isDeleting={isDeletingNoteId !== null}
+        isLoading={isDeletingNoteId !== null}
+        title="Delete Note"
+        icon={<Trash2 className="h-6 w-6 text-destructive animate-pulse" />}
+        description="Are you sure you want to delete this note? This action is permanent and cannot be undone."
+        confirmLabel="Delete Note"
+        cancelLabel="Cancel"
+        variant="destructive"
       />
-    </DashboardShell>
+    </div>
   );
 }
