@@ -43,28 +43,74 @@ export function NotesDashboard({
   sessionUser,
 }: NotesDashboardProps) {
   const { status } = useSession();
-  const [notes, setNotes] = useState<Note[]>(initialNotes);
-  const [isEditorOpen, setIsEditorOpen] = useState(false);
-  const [editingNote, setEditingNote] = useState<Note | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [showArchived, setShowArchived] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(initialTheme === 'dark');
+  const [state, setState] = useState({
+    notes: initialNotes,
+    isEditorOpen: false,
+    editingNote: null as Note | null,
+    searchQuery: '',
+    selectedCategory: 'all',
+    showArchived: false,
+    isDarkMode: initialTheme === 'dark',
+    categoryToRename: null as string | null,
+    isDeleteWarnOpen: false,
+    savedCategories: initialCategories,
+    isCreateCategoryOpen: false,
+    isDeletingNoteId: null as string | null,
+    pinningNoteId: null as string | null,
+    archivingNoteId: null as string | null,
+    deletingCategoryName: null as string | null,
+    isChangingTheme: false,
+    isInitialLoading: false,
+    viewMode: 'grid' as 'grid' | 'list',
+    noteIdToDelete: null as string | null,
+  });
+  const {
+    notes,
+    isEditorOpen,
+    editingNote,
+    searchQuery,
+    selectedCategory,
+    showArchived,
+    isDarkMode,
+    categoryToRename,
+    isDeleteWarnOpen,
+    savedCategories,
+    isCreateCategoryOpen,
+    isDeletingNoteId,
+    pinningNoteId,
+    archivingNoteId,
+    deletingCategoryName,
+    isChangingTheme,
+    isInitialLoading,
+    viewMode,
+    noteIdToDelete,
+  } = state;
 
-  const [categoryToRename, setCategoryToRename] = useState<string | null>(null);
-  const [isDeleteWarnOpen, setIsDeleteWarnOpen] = useState(false);
+  const setShowArchived = (val: boolean | ((prev: boolean) => boolean)) => {
+    setState(prev => ({
+      ...prev,
+      showArchived: typeof val === 'function' ? (val as Function)(prev.showArchived) : val
+    }));
+  };
 
-  const [savedCategories, setSavedCategories] = useState<string[]>(initialCategories);
-  const [isCreateCategoryOpen, setIsCreateCategoryOpen] = useState(false);
-  const [isDeletingNoteId, setIsDeletingNoteId] = useState<string | null>(null);
-  const [pinningNoteId, setPinningNoteId] = useState<string | null>(null);
-  const [archivingNoteId, setArchivingNoteId] = useState<string | null>(null);
-  const [deletingCategoryName, setDeletingCategoryName] = useState<string | null>(null);
-  const [isChangingTheme, setIsChangingTheme] = useState(false);
-  const [isInitialLoading, setIsInitialLoading] = useState(false);
-
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [noteIdToDelete, setNoteIdToDelete] = useState<string | null>(null);
+  const setIsInitialLoading = (val: boolean) => setState(prev => ({ ...prev, isInitialLoading: val }));
+  const setNotes = (val: Note[]) => setState(prev => ({ ...prev, notes: val }));
+  const setIsEditorOpen = (val: boolean) => setState(prev => ({ ...prev, isEditorOpen: val }));
+  const setEditingNote = (val: Note | null) => setState(prev => ({ ...prev, editingNote: val }));
+  const setSearchQuery = (val: string) => setState(prev => ({ ...prev, searchQuery: val }));
+  const setSelectedCategory = (val: string) => setState(prev => ({ ...prev, selectedCategory: val }));
+  const setIsDarkMode = (val: boolean) => setState(prev => ({ ...prev, isDarkMode: val }));
+  const setSavedCategories = (val: string[]) => setState(prev => ({ ...prev, savedCategories: val }));
+  const setIsDeletingNoteId = (val: string | null) => setState(prev => ({ ...prev, isDeletingNoteId: val }));
+  const setPinningNoteId = (val: string | null) => setState(prev => ({ ...prev, pinningNoteId: val }));
+  const setArchivingNoteId = (val: string | null) => setState(prev => ({ ...prev, archivingNoteId: val }));
+  const setDeletingCategoryName = (val: string | null) => setState(prev => ({ ...prev, deletingCategoryName: val }));
+  const setIsChangingTheme = (val: boolean) => setState(prev => ({ ...prev, isChangingTheme: val }));
+  const setViewMode = (val: 'grid' | 'list') => setState(prev => ({ ...prev, viewMode: val }));
+  const setNoteIdToDelete = (val: string | null) => setState(prev => ({ ...prev, noteIdToDelete: val }));
+  const setCategoryToRename = (val: string | null) => setState(prev => ({ ...prev, categoryToRename: val }));
+  const setIsDeleteWarnOpen = (val: boolean) => setState(prev => ({ ...prev, isDeleteWarnOpen: val }));
+  const setIsCreateCategoryOpen = (val: boolean) => setState(prev => ({ ...prev, isCreateCategoryOpen: val }));
 
   const fetchNotes = useCallback(async (isInitial = false) => {
     if (isInitial) setIsInitialLoading(true);

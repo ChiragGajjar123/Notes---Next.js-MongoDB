@@ -22,11 +22,14 @@ export function ResetPasswordForm() {
   const token = searchParams.get('token');
   const email = searchParams.get('email');
 
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [state, setState] = useState({
+    password: '',
+    confirmPassword: '',
+    isLoading: false,
+    error: '',
+    success: '',
+  });
+  const { password, confirmPassword, isLoading, error, success } = state;
 
   const allRequirementsMet = useMemo(
     () => PASSWORD_REQUIREMENTS.every((r) => r.test(password)),
@@ -37,28 +40,26 @@ export function ResetPasswordForm() {
     e.preventDefault();
 
     if (!token || !email) {
-      setError('Missing token or email from the password reset URL.');
+      setState(prev => ({ ...prev, error: 'Missing token or email from the password reset URL.' }));
       return;
     }
 
     if (!password.trim()) {
-      setError('Please enter your new password.');
+      setState(prev => ({ ...prev, error: 'Please enter your new password.' }));
       return;
     }
 
     if (!allRequirementsMet) {
-      setError('Password does not meet all complexity requirements.');
+      setState(prev => ({ ...prev, error: 'Password does not meet all complexity requirements.' }));
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match.');
+      setState(prev => ({ ...prev, error: 'Passwords do not match.' }));
       return;
     }
 
-    setIsLoading(true);
-    setError('');
-    setSuccess('');
+    setState(prev => ({ ...prev, isLoading: true, error: '', success: '' }));
 
     try {
       const result = await resetPasswordAction({
@@ -68,16 +69,19 @@ export function ResetPasswordForm() {
       });
 
       if (result.ok) {
-        setSuccess(result.data.message || 'Your password has been successfully reset.');
-        setPassword('');
-        setConfirmPassword('');
+        setState(prev => ({
+          ...prev,
+          success: result.data.message || 'Your password has been successfully reset.',
+          password: '',
+          confirmPassword: '',
+        }));
       } else {
-        setError(result.error || 'Failed to reset password.');
+        setState(prev => ({ ...prev, error: result.error || 'Failed to reset password.' }));
       }
     } catch {
-      setError('An unexpected error occurred. Please try again.');
+      setState(prev => ({ ...prev, error: 'An unexpected error occurred. Please try again.' }));
     } finally {
-      setIsLoading(false);
+      setState(prev => ({ ...prev, isLoading: false }));
     }
   };
 
@@ -157,7 +161,7 @@ export function ResetPasswordForm() {
                   <PasswordInput
                     id="password"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => setState(prev => ({ ...prev, password: e.target.value }))}
                     placeholder="Enter new password"
                     autoComplete="new-password"
                     required
@@ -172,7 +176,7 @@ export function ResetPasswordForm() {
                   <PasswordInput
                     id="confirmPassword"
                     value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    onChange={(e) => setState(prev => ({ ...prev, confirmPassword: e.target.value }))}
                     placeholder="Confirm new password"
                     autoComplete="new-password"
                     required

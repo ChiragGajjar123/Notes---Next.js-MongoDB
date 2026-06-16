@@ -15,18 +15,21 @@ interface CategoryDialogProps {
 }
 
 export function CategoryDialog({ isOpen, onClose, mode, categoryToRename, onSuccess }: CategoryDialogProps) {
-  const [categoryName, setCategoryName] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [state, setState] = useState({
+    categoryName: '',
+    isLoading: false,
+  });
+  const { categoryName, isLoading } = state;
 
   // Sync state with props when dialog opens/changes mode
   useEffect(() => {
     if (isOpen) {
       if (mode === 'rename' && categoryToRename) {
         // eslint-disable-next-line react-hooks/set-state-in-effect
-        setCategoryName(categoryToRename);
+        setState(prev => ({ ...prev, categoryName: categoryToRename }));
       } else {
          
-        setCategoryName('');
+        setState(prev => ({ ...prev, categoryName: '' }));
       }
     }
   }, [isOpen, mode, categoryToRename]);
@@ -35,7 +38,7 @@ export function CategoryDialog({ isOpen, onClose, mode, categoryToRename, onSucc
     const trimmedName = categoryName.trim();
     if (!trimmedName) return;
     
-    setIsLoading(true);
+    setState(prev => ({ ...prev, isLoading: true }));
     try {
       const result = mode === 'create'
         ? await createCategoryAction(trimmedName)
@@ -52,7 +55,7 @@ export function CategoryDialog({ isOpen, onClose, mode, categoryToRename, onSucc
     } catch (e) {
       console.error(`Failed to ${mode} category:`, e);
     } finally {
-      setIsLoading(false);
+      setState(prev => ({ ...prev, isLoading: false }));
     }
   };
 
@@ -79,7 +82,7 @@ export function CategoryDialog({ isOpen, onClose, mode, categoryToRename, onSucc
           <div className="py-4">
             <Input
               value={categoryName}
-              onChange={(e) => setCategoryName(e.target.value)}
+              onChange={(e) => setState(prev => ({ ...prev, categoryName: e.target.value }))}
               placeholder={placeholderText}
               className="rounded-xl border-border bg-background/50 h-11 text-sm sm:text-base font-semibold"
               autoFocus

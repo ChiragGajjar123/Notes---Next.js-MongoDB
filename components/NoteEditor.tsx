@@ -33,21 +33,23 @@ const PRESET_COLORS = [
 ];
 
 export function NoteEditor({ isOpen, onClose, onSave, note, existingCategories, defaultCategory = 'other' }: NoteEditorProps) {
-  const [title, setTitle] = useState('');
-  const [category, setCategory] = useState<Note['category']>('other');
-  const [tagList, setTagList] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState('');
-  const [color, setColor] = useState('#ffffff');
-  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-
-  const [isMounted, setIsMounted] = useState(false);
+  const [state, setState] = useState({
+    title: '',
+    category: 'other' as Note['category'],
+    tagList: [] as string[],
+    tagInput: '',
+    color: '#ffffff',
+    isCategoryDropdownOpen: false,
+    isSaving: false,
+    isMounted: false,
+  });
+  const { title, category, tagList, tagInput, color, isCategoryDropdownOpen, isSaving, isMounted } = state;
   const categoryOptions = existingCategories.length > 0 ? existingCategories : ['All'];
   const displayedCategory = existingCategories.length === 0 && category === 'other' ? 'All' : category;
 
   useEffect(() => {
     Promise.resolve().then(() => {
-      setIsMounted(true);
+      setState(prev => ({ ...prev, isMounted: true }));
     });
   }, []);
 
@@ -68,18 +70,24 @@ export function NoteEditor({ isOpen, onClose, onSave, note, existingCategories, 
     
     Promise.resolve().then(() => {
       if (note) {
-        setTitle(note.title);
-        setCategory(note.category);
-        setTagList(note.tags || []);
-        setTagInput('');
-        setColor(note.color || '#ffffff');
+        setState(prev => ({
+          ...prev,
+          title: note.title,
+          category: note.category,
+          tagList: note.tags || [],
+          tagInput: '',
+          color: note.color || '#ffffff',
+        }));
         setTimeout(() => editor?.commands.setContent(note.content), 0);
       } else {
-        setTitle('');
-        setCategory(defaultCategory);
-        setTagList([]);
-        setTagInput('');
-        setColor('#ffffff');
+        setState(prev => ({
+          ...prev,
+          title: '',
+          category: defaultCategory,
+          tagList: [],
+          tagInput: '',
+          color: '#ffffff',
+        }));
         setTimeout(() => editor?.commands.clearContent(), 0);
       }
     });
@@ -107,12 +115,12 @@ export function NoteEditor({ isOpen, onClose, onSave, note, existingCategories, 
       noteData._id = note._id;
     }
 
-    setIsSaving(true);
+    setState(prev => ({ ...prev, isSaving: true }));
     try {
       await onSave(noteData);
       onClose();
     } finally {
-      setIsSaving(false);
+      setState(prev => ({ ...prev, isSaving: false }));
     }
   };
 
@@ -120,23 +128,34 @@ export function NoteEditor({ isOpen, onClose, onSave, note, existingCategories, 
     if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault();
       const val = tagInput.trim().toLowerCase().replace(/#/g, '');
-      if (val && !tagList.includes(val)) {
-        setTagList(prev => [...prev, val]);
-      }
-      setTagInput('');
+      setState(prev => {
+        const nextTags = val && !prev.tagList.includes(val) ? [...prev.tagList, val] : prev.tagList;
+        return {
+          ...prev,
+          tagList: nextTags,
+          tagInput: '',
+        };
+      });
     }
   };
 
   const handleAddTagClick = () => {
     const val = tagInput.trim().toLowerCase().replace(/#/g, '');
-    if (val && !tagList.includes(val)) {
-      setTagList(prev => [...prev, val]);
-    }
-    setTagInput('');
+    setState(prev => {
+      const nextTags = val && !prev.tagList.includes(val) ? [...prev.tagList, val] : prev.tagList;
+      return {
+        ...prev,
+        tagList: nextTags,
+        tagInput: '',
+      };
+    });
   };
 
   const handleRemoveTag = (tagToRemove: string) => {
-    setTagList(prev => prev.filter(t => t !== tagToRemove));
+    setState(prev => ({
+      ...prev,
+      tagList: prev.tagList.filter(t => t !== tagToRemove),
+    }));
   };
 
   if (!editor || !isMounted) return null;
@@ -164,7 +183,7 @@ export function NoteEditor({ isOpen, onClose, onSave, note, existingCategories, 
               <Input
                 id="title"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) => setState(prev => ({ ...prev, title: e.target.value }))}
                 placeholder="Give your note a title..."
                 className="text-2xl sm:text-3xl md:text-4xl font-extrabold leading-tight min-h-[40px] sm:min-h-[48px] bg-transparent border-none shadow-none focus-visible:ring-0 px-0 h-auto py-0 placeholder:text-muted-foreground/30 text-foreground tracking-tight"
               />
@@ -183,7 +202,7 @@ export function NoteEditor({ isOpen, onClose, onSave, note, existingCategories, 
                     className="relative group" 
                     onBlur={(e) => {
                       if (!e.currentTarget.contains(e.relatedTarget)) {
-                        setIsCategoryDropdownOpen(false);
+                        setState(prev => ({ ...prev, isCategoryDropdownOpen: false }));
                       }
                     }}
                   >
@@ -191,8 +210,8 @@ export function NoteEditor({ isOpen, onClose, onSave, note, existingCategories, 
                       id="category-input"
                       value={displayedCategory}
                       readOnly
-                      onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
-                      onFocus={() => setIsCategoryDropdownOpen(true)}
+                      onClick={() => setState(prev => ({ ...prev, isCategoryDropdownOpen: !prev.isCategoryDropdownOpen }))}
+                      onFocus={() => setState(prev => ({ ...prev, isCategoryDropdownOpen: true }))}
                       placeholder="Select category..."
                       className="w-full bg-background rounded-xl border border-border/80 h-10 sm:h-11 text-sm sm:text-base font-semibold transition-all pr-10 cursor-pointer focus:ring-primary/25"
                       autoComplete="off"
@@ -208,8 +227,11 @@ export function NoteEditor({ isOpen, onClose, onSave, note, existingCategories, 
                             className="px-4 py-3 text-left hover:bg-primary/10 hover:text-primary cursor-pointer text-xs sm:text-sm font-semibold transition-colors border-b border-border/40 last:border-0"
                             onMouseDown={(e) => {
                               e.preventDefault();
-                              setCategory(cat === 'All' ? 'other' : cat);
-                              setIsCategoryDropdownOpen(false);
+                              setState(prev => ({
+                                ...prev,
+                                category: cat === 'All' ? 'other' : cat,
+                                isCategoryDropdownOpen: false,
+                              }));
                             }}
                           >
                             {cat}
@@ -229,7 +251,7 @@ export function NoteEditor({ isOpen, onClose, onSave, note, existingCategories, 
                     <Input
                       id="tags"
                       value={tagInput}
-                      onChange={(e) => setTagInput(e.target.value)}
+                      onChange={(e) => setState(prev => ({ ...prev, tagInput: e.target.value }))}
                       onKeyDown={handleKeyDownTag}
                       placeholder="Press enter to add tags..."
                       className="rounded-xl border border-border/80 bg-background h-10 sm:h-11 text-sm sm:text-base placeholder:text-muted-foreground/45 font-semibold transition-all pr-10"
@@ -282,7 +304,7 @@ export function NoteEditor({ isOpen, onClose, onSave, note, existingCategories, 
                     <button
                       type="button"
                       key={item.value}
-                      onClick={() => setColor(item.value)}
+                      onClick={() => setState(prev => ({ ...prev, color: item.value }))}
                       style={{ backgroundColor: item.value }}
                       className={`h-7 w-7 rounded-full border transition-all hover:scale-110 active:scale-95 cursor-pointer ${color.toLowerCase() === item.value.toLowerCase() ? 'border-primary ring-2 ring-primary/20 scale-105 shadow-sm' : 'border-border/60'}`}
                       title={item.name}
@@ -296,7 +318,7 @@ export function NoteEditor({ isOpen, onClose, onSave, note, existingCategories, 
                       id="color-picker-input"
                       type="color"
                       value={color}
-                      onChange={(e) => setColor(e.target.value)}
+                      onChange={(e) => setState(prev => ({ ...prev, color: e.target.value }))}
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                       title="Choose custom color"
                     />
