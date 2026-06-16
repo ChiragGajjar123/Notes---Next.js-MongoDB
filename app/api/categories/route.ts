@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     if (response) return response;
     const user = await User.findById(session.user.id);
     return NextResponse.json({ categories: user?.categories || [] });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Failed to fetch categories' },
       { status: 500 }
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
       success: true,
       categories: user.categories,
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Failed to create category' },
       { status: 500 }
@@ -85,7 +85,7 @@ export async function PUT(request: NextRequest) {
       success: true,
       modifiedCount: result.modifiedCount,
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Failed to rename' },
       { status: 500 }
@@ -117,7 +117,7 @@ export async function DELETE(request: NextRequest) {
     );
 
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Failed to delete' },
       { status: 500 }

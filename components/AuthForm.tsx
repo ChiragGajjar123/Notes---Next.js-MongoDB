@@ -7,14 +7,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogIn, UserPlus, Loader2, Eye, EyeOff, Check, X } from 'lucide-react';
+import { LogIn, UserPlus, Loader2 } from 'lucide-react';
 import { Header } from './Header';
+import { BackgroundBlobs } from './BackgroundBlobs';
+import { PasswordInput } from './PasswordInput';
+import { PasswordStrengthIndicator } from './PasswordStrengthIndicator';
 
-import { PASSWORD_REQUIREMENTS, getPasswordStrength, PASSWORD_RULES } from '@/lib/validations';
+import { PASSWORD_REQUIREMENTS } from '@/lib/validations';
 
 const MAX_NAME_LENGTH = 100;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const MIN_PASSWORD_LENGTH = PASSWORD_RULES.minLength;
 
 export function AuthForm() {
   const [email, setEmail] = useState('');
@@ -26,7 +28,6 @@ export function AuthForm() {
   const [resetUrl, setResetUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
   // Prefetch the dashboard resources to eliminate lag after successful login
@@ -34,19 +35,9 @@ export function AuthForm() {
     router.prefetch('/');
   }, [router]);
 
-  const passwordStrength = useMemo(
-    () => getPasswordStrength(password),
-    [password]
-  );
-
-  const requirementsMet = useMemo(
-    () => PASSWORD_REQUIREMENTS.map((r) => ({ ...r, met: r.test(password) })),
-    [password]
-  );
-
   const allRequirementsMet = useMemo(
-    () => requirementsMet.every((r) => r.met),
-    [requirementsMet]
+    () => PASSWORD_REQUIREMENTS.every((r) => r.test(password)),
+    [password]
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -78,7 +69,7 @@ export function AuthForm() {
         } else {
           setError(data.error || 'Failed to send reset link.');
         }
-      } catch (err) {
+      } catch {
         setError('An unexpected error occurred. Please try again.');
       } finally {
         setIsLoading(false);
@@ -127,7 +118,7 @@ export function AuthForm() {
         await getSession();
         window.location.replace(result?.url || '/');
       }
-    } catch (error) {
+    } catch {
       setError('An unexpected error occurred. Please try again.');
       setIsLoading(false);
     }
@@ -159,12 +150,7 @@ export function AuthForm() {
     <>
       <Header isAuthPage={true} />
       <div className="min-h-[calc(100vh-76px)] flex items-start justify-center bg-background px-3 py-4 sm:px-4 sm:py-6 pt-16 sm:pt-16 relative overflow-hidden">
-        {/* Animated Background Blobs */}
-        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-[-10%] left-[-10%] w-[55%] h-[55%] rounded-full bg-primary/10 blur-[80px] sm:blur-[120px] animate-blob-float-1" />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[55%] h-[55%] rounded-full bg-primary/8 blur-[80px] sm:blur-[120px] animate-blob-float-2" />
-          <div className="absolute top-[40%] left-[25%] w-[40%] h-[40%] rounded-full bg-indigo-500/5 blur-[70px] sm:blur-[100px] animate-blob-float-3" />
-        </div>
+        <BackgroundBlobs />
 
         <Card className="w-full max-w-md shadow-2xl border-border/40 bg-card/75 dark:bg-card/45 backdrop-blur-xl relative z-10 rounded-2xl sm:rounded-3xl transition-all duration-300">
           <CardHeader className="text-center space-y-2 px-4 py-5 sm:px-8 sm:py-7">
@@ -232,68 +218,18 @@ export function AuthForm() {
                       </button>
                     )}
                   </div>
-                  <div className="relative">
-                    <Input
-                      id="password"
-                      type={showPassword ? 'text' : 'password'}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Enter your password"
-                      autoComplete={isSignUp ? 'new-password' : 'current-password'}
-                      required={!isForgot}
-                      className="pr-11 bg-background/40 h-11 border-border/80"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/60 hover:text-foreground transition-colors"
-                      tabIndex={-1}
-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-4.5 w-4.5" />
-                      ) : (
-                        <Eye className="h-4.5 w-4.5" />
-                      )}
-                    </button>
-                  </div>
+                  <PasswordInput
+                    id="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    autoComplete={isSignUp ? 'new-password' : 'current-password'}
+                    required={!isForgot}
+                  />
 
                   {/* Password Strength Indicator (signup only) */}
-                  {isSignUp && password.length > 0 && (
-                    <div className="mt-2.5 space-y-2.5 p-3 rounded-xl bg-secondary/20 border border-border/40">
-                      {/* Strength Bar */}
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all duration-300 ${passwordStrength.color}`}
-                            style={{ width: `${passwordStrength.score}%` }}
-                          />
-                        </div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground min-w-[4.5rem] text-right">
-                          {passwordStrength.label}
-                        </span>
-                      </div>
-
-                      {/* Requirements Checklist */}
-                      <div className="grid grid-cols-1 gap-1">
-                        {requirementsMet.map((req) => (
-                          <div
-                            key={req.label}
-                            className={`flex items-center gap-1.5 text-xs transition-colors duration-200 ${req.met
-                              ? 'text-green-600 dark:text-green-400 font-medium'
-                              : 'text-muted-foreground/70'
-                              }`}
-                          >
-                            {req.met ? (
-                              <Check className="h-3.5 w-3.5 shrink-0 text-green-500" />
-                            ) : (
-                              <X className="h-3.5 w-3.5 shrink-0 text-muted-foreground/40" />
-                            )}
-                            <span>{req.label}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                  {isSignUp && (
+                    <PasswordStrengthIndicator password={password} />
                   )}
                 </div>
               )}
@@ -378,7 +314,6 @@ export function AuthForm() {
                     setIsSignUp(!isSignUp);
                     setError('');
                     setPassword('');
-                    setShowPassword(false);
                   }}
                   className="text-xs sm:text-sm text-primary hover:text-primary/80 font-bold transition-all"
                 >

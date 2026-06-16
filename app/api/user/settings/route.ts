@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       theme: user.theme || 'light',
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Failed to fetch settings' },
       { status: 500 }
@@ -49,7 +49,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true, theme: user.theme });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Failed to update settings' },
       { status: 500 }

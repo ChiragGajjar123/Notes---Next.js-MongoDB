@@ -6,10 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { NoteCard } from '@/components/NoteCard';
 import dynamic from 'next/dynamic';
-import { Plus, Search, FileText, Pencil, Trash2, AlertTriangle, Loader2, LayoutGrid, List, Pin } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Plus, Search, FileText, Pencil, Trash2, Loader2, LayoutGrid, List, Pin } from 'lucide-react';
 import { Note } from '@/types';
 import { Header } from '@/components/Header';
+import { CreateCategoryDialog } from '@/components/CreateCategoryDialog';
+import { RenameCategoryDialog } from '@/components/RenameCategoryDialog';
+import { DeleteConfirmDialog } from '@/components/DeleteConfirmDialog';
+import { CategoryDeleteWarnDialog } from '@/components/CategoryDeleteWarnDialog';
 
 const NoteEditor = dynamic(() => import('@/components/NoteEditor').then(mod => mod.NoteEditor), {
   ssr: false
@@ -33,7 +36,7 @@ export function NotesDashboard({
   initialTheme,
   sessionUser,
 }: NotesDashboardProps) {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const [notes, setNotes] = useState<Note[]>(initialNotes);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
@@ -42,16 +45,11 @@ export function NotesDashboard({
   const [showArchived, setShowArchived] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(initialTheme === 'dark');
 
-  const [isRenameOpen, setIsRenameOpen] = useState(false);
   const [categoryToRename, setCategoryToRename] = useState<string | null>(null);
-  const [newCategoryName, setNewCategoryName] = useState('');
   const [isDeleteWarnOpen, setIsDeleteWarnOpen] = useState(false);
-  const [isRenaming, setIsRenaming] = useState(false);
 
   const [savedCategories, setSavedCategories] = useState<string[]>(initialCategories);
   const [isCreateCategoryOpen, setIsCreateCategoryOpen] = useState(false);
-  const [newCreatedCategory, setNewCreatedCategory] = useState('');
-  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [isDeletingNoteId, setIsDeletingNoteId] = useState<string | null>(null);
   const [pinningNoteId, setPinningNoteId] = useState<string | null>(null);
   const [archivingNoteId, setArchivingNoteId] = useState<string | null>(null);
@@ -68,7 +66,6 @@ export function NotesDashboard({
     }
     return 'grid';
   });
-  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [noteIdToDelete, setNoteIdToDelete] = useState<string | null>(null);
 
   const fetchNotes = useCallback(async (isInitial = false) => {
@@ -110,20 +107,6 @@ export function NotesDashboard({
       }
     } catch (e) {
       console.error(e);
-    }
-  }, []);
-
-  const fetchUserSettings = useCallback(async () => {
-    try {
-      const response = await fetch('/api/user/settings');
-      if (response.ok) {
-        const data = await response.json();
-        if (data.theme) {
-          setIsDarkMode(data.theme === 'dark');
-        }
-      }
-    } catch (e) {
-      console.error('Failed to fetch user settings:', e);
     }
   }, []);
 
@@ -184,53 +167,6 @@ export function NotesDashboard({
     }
   }, [isDarkMode]);
 
-  const handleRenameCategorySubmit = async () => {
-    if (!categoryToRename || !newCategoryName.trim()) return;
-    setIsRenaming(true);
-    try {
-      const response = await fetch('/api/categories', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ oldName: categoryToRename, newName: newCategoryName.trim() })
-      });
-      if (response.ok) {
-        if (selectedCategory === categoryToRename) {
-          setSelectedCategory(newCategoryName.trim());
-        }
-        await fetchNotes();
-        await fetchCategories();
-        setIsRenameOpen(false);
-      }
-    } catch (error) {
-      console.error('Failed to rename category:', error);
-    } finally {
-      setIsRenaming(false);
-    }
-  };
-
-  const handleCreateCategorySubmit = async () => {
-    const categoryName = newCreatedCategory.trim();
-    if (!categoryName) return;
-    setIsCreatingCategory(true);
-    try {
-      const response = await fetch('/api/categories', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: categoryName })
-      });
-      if (response.ok) {
-        await fetchCategories();
-        setSelectedCategory(categoryName);
-        setIsCreateCategoryOpen(false);
-        setNewCreatedCategory('');
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsCreatingCategory(false);
-    }
-  };
-
   const handleExecuteDeleteEmptyCategory = async (name: string) => {
     setDeletingCategoryName(name);
     try {
@@ -283,13 +219,11 @@ export function NotesDashboard({
 
   const handleDeleteNoteTrigger = (noteId: string) => {
     setNoteIdToDelete(noteId);
-    setIsDeleteConfirmOpen(true);
   };
 
   const executeDeleteNote = async () => {
     if (!noteIdToDelete) return;
     setIsDeletingNoteId(noteIdToDelete);
-    setIsDeleteConfirmOpen(false);
     try {
       const response = await fetch(`/api/notes/${noteIdToDelete}`, {
         method: 'DELETE',
@@ -477,19 +411,12 @@ export function NotesDashboard({
                             variant="ghost"
                             size="icon"
                             className="h-6.5 w-6.5 rounded-lg hover:bg-background shadow-sm"
-                            disabled={isRenaming && categoryToRename === category}
                             onClick={(e) => {
                               e.stopPropagation();
                               setCategoryToRename(category);
-                              setNewCategoryName(category);
-                              setIsRenameOpen(true);
                             }}
                           >
-                            {isRenaming && categoryToRename === category ? (
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                            ) : (
-                              <Pencil className="h-3 w-3 text-muted-foreground/75 hover:text-foreground" />
-                            )}
+                            <Pencil className="h-3 w-3 text-muted-foreground/75 hover:text-foreground" />
                           </Button>
                           <Button
                             variant="ghost"
@@ -659,120 +586,40 @@ export function NotesDashboard({
         defaultCategory={editorDefaultCategory}
       />
 
-      <Dialog open={isCreateCategoryOpen} onOpenChange={setIsCreateCategoryOpen}>
-        <DialogContent className="w-[92%] max-w-[425px] rounded-2xl glass dark:glass-dark border-border/50 max-h-[92dvh] flex flex-col p-0 overflow-y-auto">
-          <div className="p-5 sm:p-6">
-            <DialogHeader>
-              <DialogTitle className="font-extrabold text-lg sm:text-xl">Create New Category</DialogTitle>
-              <DialogDescription className="text-xs sm:text-sm mt-1.5 text-muted-foreground">
-                Add a new folder to organize your notes. You can drag and drop notes into this folder later.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="py-4">
-              <Input
-                value={newCreatedCategory}
-                onChange={(e) => setNewCreatedCategory(e.target.value)}
-                placeholder="e.g. Work, Personal, Ideas"
-                className="rounded-xl border-border bg-background/50 h-11 text-sm sm:text-base font-semibold"
-                autoFocus
-              />
-            </div>
-          </div>
-          <DialogFooter className="gap-2 p-5 sm:p-6 pt-0 border-t border-border/10 bg-muted/5 flex-col sm:flex-row-reverse">
-            <Button onClick={handleCreateCategorySubmit} className="w-full rounded-xl font-bold shadow-md shadow-primary/25 sm:w-auto h-11" disabled={isCreatingCategory || !newCreatedCategory.trim()}>
-              {isCreatingCategory ? 'Creating...' : 'Create Folder'}
-            </Button>
-            <Button variant="ghost" onClick={() => setIsCreateCategoryOpen(false)} className="w-full rounded-xl font-semibold sm:w-auto h-11" disabled={isCreatingCategory}>Cancel</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CreateCategoryDialog
+        isOpen={isCreateCategoryOpen}
+        onClose={() => setIsCreateCategoryOpen(false)}
+        onSuccess={async (categoryName) => {
+          await fetchCategories();
+          setSelectedCategory(categoryName);
+        }}
+      />
 
-      <Dialog open={isRenameOpen} onOpenChange={setIsRenameOpen}>
-        <DialogContent className="w-[92%] max-w-[425px] rounded-2xl glass dark:glass-dark border-border/50 max-h-[92dvh] flex flex-col p-0 overflow-y-auto">
-          <div className="p-5 sm:p-6">
-            <DialogHeader>
-              <DialogTitle className="font-extrabold text-lg sm:text-xl">Rename Category</DialogTitle>
-              <DialogDescription className="text-xs sm:text-sm mt-1.5 text-muted-foreground">
-                This will update the category string internally for all notes currently inside this folder.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="py-4">
-              <Input
-                value={newCategoryName}
-                onChange={(e) => setNewCategoryName(e.target.value)}
-                placeholder="e.g. Project Specs"
-                className="rounded-xl border-border bg-background/50 h-11 text-sm sm:text-base font-semibold"
-                autoFocus
-              />
-            </div>
-          </div>
-          <DialogFooter className="gap-2 p-5 sm:p-6 pt-0 border-t border-border/10 bg-muted/5 flex-col sm:flex-row-reverse">
-            <Button onClick={handleRenameCategorySubmit} className="w-full rounded-xl font-bold shadow-md shadow-primary/25 sm:w-auto h-11" disabled={isRenaming || !newCategoryName.trim()}>
-              {isRenaming ? 'Saving...' : 'Save Category'}
-            </Button>
-            <Button variant="ghost" onClick={() => setIsRenameOpen(false)} className="w-full rounded-xl font-semibold sm:w-auto h-11" disabled={isRenaming}>Cancel</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <RenameCategoryDialog
+        key={categoryToRename || ''}
+        isOpen={categoryToRename !== null}
+        onClose={() => setCategoryToRename(null)}
+        categoryToRename={categoryToRename}
+        onSuccess={async (newName) => {
+          if (selectedCategory === categoryToRename) {
+            setSelectedCategory(newName);
+          }
+          await fetchNotes();
+          await fetchCategories();
+        }}
+      />
 
-      <Dialog open={isDeleteWarnOpen} onOpenChange={setIsDeleteWarnOpen}>
-        <DialogContent className="w-[92%] max-w-[425px] rounded-2xl glass dark:glass-dark border-destructive/20 shadow-destructive/10 max-h-[92dvh] flex flex-col p-0 overflow-y-auto">
-          <div className="p-5 sm:p-6">
-            <DialogHeader>
-              <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
-                <AlertTriangle className="h-6 w-6 text-destructive" />
-              </div>
-              <DialogTitle className="text-center font-extrabold text-lg sm:text-xl">Cannot Delete Category</DialogTitle>
-              <DialogDescription className="sr-only">
-                Information about why this category cannot be deleted yet.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="text-center py-4 text-xs sm:text-sm text-muted-foreground/90 leading-relaxed font-semibold">
-              Categories cannot be deleted while they still contain notes.
-              <br /><br />
-              Please edit your notes to place them in a different category, or delete them first. Once empty, this category will automatically be cleared from your sidebar.
-            </div>
-          </div>
-          <DialogFooter className="sm:justify-center p-5 sm:p-6 pt-0 border-t border-border/10 bg-muted/5">
-            <Button onClick={() => setIsDeleteWarnOpen(false)} className="w-full rounded-xl px-8 sm:w-auto h-11 font-bold" variant="outline">Understand</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CategoryDeleteWarnDialog
+        isOpen={isDeleteWarnOpen}
+        onClose={() => setIsDeleteWarnOpen(false)}
+      />
 
-      {/* Custom Delete Confirmation Dialog */}
-      <Dialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
-        <DialogContent className="w-[92%] max-w-[400px] rounded-2xl glass dark:glass-dark border-destructive/20 shadow-destructive/10 max-h-[92dvh] flex flex-col p-0 overflow-y-auto">
-          <div className="p-5 sm:p-6">
-            <DialogHeader>
-              <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
-                <Trash2 className="h-6 w-6 text-destructive animate-pulse" />
-              </div>
-              <DialogTitle className="text-center text-xl font-extrabold tracking-tight">Delete Note</DialogTitle>
-              <DialogDescription className="text-center text-xs sm:text-sm mt-2 text-muted-foreground/95 font-medium leading-relaxed">
-                Are you sure you want to delete this note? This action is permanent and cannot be undone.
-              </DialogDescription>
-            </DialogHeader>
-          </div>
-          <DialogFooter className="gap-2 p-5 sm:p-6 pt-0 border-t border-border/10 bg-muted/5 flex-col sm:flex-row-reverse">
-            <Button 
-              onClick={executeDeleteNote} 
-              className="w-full rounded-xl font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90 sm:w-auto h-11"
-            >
-              Delete Note
-            </Button>
-            <Button 
-              variant="ghost" 
-              onClick={() => {
-                setIsDeleteConfirmOpen(false);
-                setNoteIdToDelete(null);
-              }} 
-              className="w-full rounded-xl font-semibold sm:w-auto h-11"
-            >
-              Cancel
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DeleteConfirmDialog
+        isOpen={noteIdToDelete !== null}
+        onClose={() => setNoteIdToDelete(null)}
+        onConfirm={executeDeleteNote}
+        isDeleting={isDeletingNoteId !== null}
+      />
     </div>
   );
 }

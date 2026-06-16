@@ -1,4 +1,3 @@
-import NextAuth from 'next-auth';
 import type { NextAuthOptions } from 'next-auth';
 import { MongoDBAdapter } from '@auth/mongodb-adapter';
 import CredentialsProvider from 'next-auth/providers/credentials';
@@ -28,7 +27,7 @@ async function enforceLimitOrThrow(key: string, config: RateLimitConfig, errorPr
 }
 
 export const authOptions: NextAuthOptions = {
-  adapter: MongoDBAdapter(clientPromise) as any,
+  adapter: MongoDBAdapter(clientPromise) as NextAuthOptions['adapter'],
   providers: [
     CredentialsProvider({
       name: 'credentials',

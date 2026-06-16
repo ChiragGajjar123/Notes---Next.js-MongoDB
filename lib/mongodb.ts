@@ -11,7 +11,7 @@ if (!MONGODB_URI) {
 let clientPromise: Promise<MongoClient>;
 
 if (process.env.NODE_ENV === 'development') {
-  let globalWithMongo = global as typeof globalThis & { _mongoClientPromise?: Promise<MongoClient> };
+  const globalWithMongo = global as typeof globalThis & { _mongoClientPromise?: Promise<MongoClient> };
   if (!globalWithMongo._mongoClientPromise) {
     globalWithMongo._mongoClientPromise = new MongoClient(MONGODB_URI).connect();
   }

@@ -6,10 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Eye, EyeOff, Check, X, ShieldAlert, KeyRound } from 'lucide-react';
+import { Loader2, ShieldAlert, KeyRound } from 'lucide-react';
 import { Header } from '@/components/Header';
+import { BackgroundBlobs } from '@/components/BackgroundBlobs';
+import { PasswordInput } from '@/components/PasswordInput';
+import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicator';
 
-import { PASSWORD_REQUIREMENTS, getPasswordStrength } from '@/lib/validations';
+import { PASSWORD_REQUIREMENTS } from '@/lib/validations';
 
 export function ResetPasswordForm() {
   const router = useRouter();
@@ -20,25 +23,13 @@ export function ResetPasswordForm() {
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const passwordStrength = useMemo(
-    () => getPasswordStrength(password),
-    [password]
-  );
-
-  const requirementsMet = useMemo(
-    () => PASSWORD_REQUIREMENTS.map((r) => ({ ...r, met: r.test(password) })),
-    [password]
-  );
-
   const allRequirementsMet = useMemo(
-    () => requirementsMet.every((r) => r.met),
-    [requirementsMet]
+    () => PASSWORD_REQUIREMENTS.every((r) => r.test(password)),
+    [password]
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -88,7 +79,7 @@ export function ResetPasswordForm() {
       } else {
         setError(data.error || 'Failed to reset password.');
       }
-    } catch (err) {
+    } catch {
       setError('An unexpected error occurred. Please try again.');
     } finally {
       setIsLoading(false);
@@ -101,12 +92,7 @@ export function ResetPasswordForm() {
     <>
       <Header isAuthPage={true} />
       <div className="min-h-[calc(100vh-76px)] flex items-start justify-center bg-background px-3 py-4 sm:px-4 sm:py-6 pt-16 sm:pt-16 relative overflow-hidden">
-        {/* Animated Background Blobs */}
-        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-[-10%] left-[-10%] w-[55%] h-[55%] rounded-full bg-primary/10 blur-[80px] sm:blur-[120px] animate-blob-float-1" />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[55%] h-[55%] rounded-full bg-primary/8 blur-[80px] sm:blur-[120px] animate-blob-float-2" />
-          <div className="absolute top-[40%] left-[25%] w-[40%] h-[40%] rounded-full bg-indigo-500/5 blur-[70px] sm:blur-[100px] animate-blob-float-3" />
-        </div>
+        <BackgroundBlobs />
 
         <Card className="w-full max-w-md shadow-2xl border-border/40 bg-card/75 dark:bg-card/45 backdrop-blur-xl relative z-10 rounded-2xl sm:rounded-3xl transition-all duration-300">
           <CardHeader className="text-center space-y-2 px-4 py-5 sm:px-8 sm:py-7">
@@ -143,7 +129,7 @@ export function ResetPasswordForm() {
             ) : success ? (
               <div className="space-y-4">
                 <div className="rounded-xl bg-green-500/10 border border-green-500/20 p-4 text-center">
-                  <Check className="h-10 w-10 text-green-600 dark:text-green-400 mx-auto mb-2" />
+                  <ShieldAlert className="h-10 w-10 text-green-600 dark:text-green-400 mx-auto mb-2" />
                   <p className="text-green-600 dark:text-green-400 font-bold text-sm">
                     Password Reset Complete
                   </p>
@@ -173,98 +159,29 @@ export function ResetPasswordForm() {
 
                 <div className="space-y-1.5">
                   <Label htmlFor="password" className="text-xs font-semibold text-muted-foreground tracking-wider uppercase pl-1">New Password</Label>
-                  <div className="relative">
-                    <Input
-                      id="password"
-                      type={showPassword ? 'text' : 'password'}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Enter new password"
-                      autoComplete="new-password"
-                      required
-                      className="pr-11 bg-background/40 h-11 border-border/80"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/60 hover:text-foreground transition-colors"
-                      tabIndex={-1}
-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-4.5 w-4.5" />
-                      ) : (
-                        <Eye className="h-4.5 w-4.5" />
-                      )}
-                    </button>
-                  </div>
+                  <PasswordInput
+                    id="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter new password"
+                    autoComplete="new-password"
+                    required
+                  />
 
                   {/* Password Strength Indicator */}
-                  {password.length > 0 && (
-                    <div className="mt-2.5 space-y-2.5 p-3 rounded-xl bg-secondary/20 border border-border/40 animate-in fade-in slide-in-from-top-1 duration-200">
-                      {/* Strength Bar */}
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all duration-300 ${passwordStrength.color}`}
-                            style={{ width: `${passwordStrength.score}%` }}
-                          />
-                        </div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground min-w-[4.5rem] text-right">
-                          {passwordStrength.label}
-                        </span>
-                      </div>
-
-                      {/* Requirements Checklist */}
-                      <div className="grid grid-cols-1 gap-1">
-                        {requirementsMet.map((req) => (
-                          <div
-                            key={req.label}
-                            className={`flex items-center gap-1.5 text-xs transition-colors duration-200 ${req.met
-                                ? 'text-green-600 dark:text-green-400 font-medium'
-                                : 'text-muted-foreground/70'
-                              }`}
-                          >
-                            {req.met ? (
-                              <Check className="h-3.5 w-3.5 shrink-0 text-green-500" />
-                            ) : (
-                              <X className="h-3.5 w-3.5 shrink-0 text-muted-foreground/40" />
-                            )}
-                            <span>{req.label}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  <PasswordStrengthIndicator password={password} />
                 </div>
 
                 <div className="space-y-1.5">
                   <Label htmlFor="confirmPassword" className="text-xs font-semibold text-muted-foreground tracking-wider uppercase pl-1">Confirm Password</Label>
-                  <div className="relative">
-                    <Input
-                      id="confirmPassword"
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Confirm new password"
-                      autoComplete="new-password"
-                      required
-                      className="pr-11 bg-background/40 h-11 border-border/80"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/60 hover:text-foreground transition-colors"
-                      tabIndex={-1}
-                      aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
-                    >
-                      {showConfirmPassword ? (
-                        <EyeOff className="h-4.5 w-4.5" />
-                      ) : (
-                        <Eye className="h-4.5 w-4.5" />
-                      )}
-                    </button>
-                  </div>
+                  <PasswordInput
+                    id="confirmPassword"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm new password"
+                    autoComplete="new-password"
+                    required
+                  />
                 </div>
 
                 {error && (
