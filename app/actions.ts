@@ -213,6 +213,13 @@ export async function updateThemeAction(theme: 'light' | 'dark'): Promise<Action
 export async function forgotPasswordAction(emailInput: string): Promise<ActionResult<{ message: string; resetUrl?: string }>> {
   try {
     const ip = await getIp();
+    
+    const cooldownResult = await checkRateLimit(`forgot-password-cooldown:${ip}`, RATE_LIMITS.passwordResetCooldown);
+    if (!cooldownResult.success) {
+      const seconds = Math.ceil((cooldownResult.resetAt - Date.now()) / 1000);
+      throw new Error(`Please wait ${seconds} second(s) before requesting another password reset.`);
+    }
+
     await enforceActionLimit(`forgot-password:${ip}`);
 
     const validation = forgotPasswordSchema.safeParse({ email: emailInput });

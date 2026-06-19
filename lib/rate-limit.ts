@@ -41,6 +41,8 @@ export const RATE_LIMITS = {
   api: { maxAttempts: 100, windowSeconds: 60 } as RateLimitConfig,
   /** Password reset: 3 attempts per hour */
   passwordReset: { maxAttempts: 3, windowSeconds: 60 * 60 } as RateLimitConfig,
+  /** Password reset cooldown: 1 attempt per 60 seconds */
+  passwordResetCooldown: { maxAttempts: 1, windowSeconds: 60 } as RateLimitConfig,
 } as const;
 
 export interface RateLimitResult {

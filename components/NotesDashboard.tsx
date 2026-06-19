@@ -89,7 +89,7 @@ export function NotesDashboard({
   const setShowArchived = (val: boolean | ((prev: boolean) => boolean)) => {
     setState(prev => ({
       ...prev,
-      showArchived: typeof val === 'function' ? (val as Function)(prev.showArchived) : val
+      showArchived: typeof val === 'function' ? (val as (prev: boolean) => boolean)(prev.showArchived) : val
     }));
   };
 

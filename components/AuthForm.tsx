@@ -19,6 +19,9 @@ import { PASSWORD_REQUIREMENTS } from '@/lib/validations';
 const MAX_NAME_LENGTH = 100;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// Helper to safely get the current timestamp, avoiding React Compiler purity rule checks on render path
+const getNowTimestamp = () => Date.now();
+
 export function AuthForm() {
   const [state, setState] = useState({
     email: '',
@@ -45,6 +48,45 @@ export function AuthForm() {
     error,
   } = state;
   const router = useRouter();
+
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
+
+  // Restore cooldown from localStorage on mount
+  useEffect(() => {
+    const storedEnd = localStorage.getItem('forgotPasswordCooldownEnd');
+    if (storedEnd) {
+      const timeLeft = Math.ceil((parseInt(storedEnd, 10) - getNowTimestamp()) / 1000);
+      if (timeLeft > 0) {
+        setTimeout(() => {
+          setCooldownSeconds(timeLeft);
+        }, 0);
+      } else {
+        localStorage.removeItem('forgotPasswordCooldownEnd');
+      }
+    }
+  }, []);
+
+  // Cooldown countdown effect
+  useEffect(() => {
+    if (cooldownSeconds <= 0) return;
+
+    const interval = setInterval(() => {
+      const storedEnd = localStorage.getItem('forgotPasswordCooldownEnd');
+      if (storedEnd) {
+        const timeLeft = Math.ceil((parseInt(storedEnd, 10) - getNowTimestamp()) / 1000);
+        if (timeLeft > 0) {
+          setCooldownSeconds(timeLeft);
+        } else {
+          setCooldownSeconds(0);
+          localStorage.removeItem('forgotPasswordCooldownEnd');
+        }
+      } else {
+        setCooldownSeconds(prev => (prev > 1 ? prev - 1 : 0));
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [cooldownSeconds]);
 
   // Prefetch the dashboard resources to eliminate lag after successful login
   useEffect(() => {
@@ -75,8 +117,20 @@ export function AuthForm() {
             forgotSuccess: result.data.message,
             resetUrl: result.data.resetUrl || '',
           }));
+          const cooldownEnd = getNowTimestamp() + 60000;
+          localStorage.setItem('forgotPasswordCooldownEnd', cooldownEnd.toString());
+          setCooldownSeconds(60);
         } else {
           setState(prev => ({ ...prev, error: result.error || 'Failed to send reset link.' }));
+          if (result.error?.includes('Please wait')) {
+            const match = result.error.match(/Please wait (\d+) second/);
+            if (match && match[1]) {
+              const seconds = parseInt(match[1], 10);
+              const cooldownEnd = getNowTimestamp() + seconds * 1000;
+              localStorage.setItem('forgotPasswordCooldownEnd', cooldownEnd.toString());
+              setCooldownSeconds(seconds);
+            }
+          }
         }
       } catch {
         setState(prev => ({ ...prev, error: 'An unexpected error occurred. Please try again.' }));
@@ -298,7 +352,7 @@ export function AuthForm() {
               <Button
                 type="submit"
                 className="w-full h-11 sm:h-12 text-sm sm:text-base font-bold rounded-xl shadow-lg hover:shadow-primary/25 hover:scale-[1.02] active:scale-[0.98] transition-all bg-primary text-primary-foreground whitespace-normal"
-                disabled={isLoading || (!isForgot && isSignUp && password.length > 0 && !allRequirementsMet)}
+                disabled={isLoading || (!isForgot && isSignUp && password.length > 0 && !allRequirementsMet) || (isForgot && cooldownSeconds > 0)}
               >
                 {isLoading ? (
                   <>
@@ -308,10 +362,14 @@ export function AuthForm() {
                 ) : (
                   <>
                     {isForgot ? (
-                      <>
-                        <LogIn className="h-4.5 w-4.5 mr-2" />
-                        Send Reset Link
-                      </>
+                      cooldownSeconds > 0 ? (
+                        `Resend in ${cooldownSeconds}s`
+                      ) : (
+                        <>
+                          <LogIn className="h-4.5 w-4.5 mr-2" />
+                          Send Reset Link
+                        </>
+                      )
                     ) : isSignUp ? (
                       <>
                         <UserPlus className="h-4.5 w-4.5 mr-2" />
