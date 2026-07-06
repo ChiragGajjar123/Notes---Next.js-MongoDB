@@ -243,7 +243,10 @@ export async function forgotPasswordAction(emailInput: string): Promise<ActionRe
       }
     );
 
-    const origin = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+    const headerStore = await headers();
+    const host = headerStore.get('host');
+    const proto = headerStore.get('x-forwarded-proto') || (host?.includes('localhost') ? 'http' : 'https');
+    const origin = host ? `${proto}://${host}` : (process.env.NEXTAUTH_URL || 'http://localhost:3000');
     const resetUrl = `${origin}/auth/reset-password?token=${rawToken}&email=${encodeURIComponent(validation.data.email)}`;
     const emailResult = await sendPasswordResetEmail({
       to: validation.data.email,

@@ -57,7 +57,9 @@ export async function POST(request: Request) {
     );
 
     // 6. Generate the reset URL
-    const origin = process.env.NEXTAUTH_URL || new URL(request.url).origin;
+    const host = request.headers.get('host');
+    const proto = request.headers.get('x-forwarded-proto') || (host?.includes('localhost') ? 'http' : 'https');
+    const origin = host ? `${proto}://${host}` : (process.env.NEXTAUTH_URL || new URL(request.url).origin);
     const resetUrl = `${origin}/auth/reset-password?token=${rawToken}&email=${encodeURIComponent(email)}`;
 
     const emailResult = await sendPasswordResetEmail({
