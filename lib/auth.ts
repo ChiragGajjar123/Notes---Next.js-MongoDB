@@ -57,12 +57,6 @@ export const authOptions: NextAuthOptions = {
 
         // ── Sign In ────────────────────────────────────────────
         if (mode === 'signin') {
-          // IP-based Rate Limiting for Login
-          try {
-            await enforceLimitOrThrow(`login:${ip}`, RATE_LIMITS.login, 'Too many login attempts');
-          } catch {
-            return null;
-          }
 
           const validation = signinSchema.safeParse({ email, password });
           if (!validation.success) {
