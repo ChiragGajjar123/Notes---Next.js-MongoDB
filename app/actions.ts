@@ -1,114 +1,52 @@
-'use server';
-
-import crypto from 'crypto';
-import bcrypt from 'bcryptjs';
-import { headers } from 'next/headers';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import connectDB from '@/lib/mongoose';
-import Note from '@/lib/models/Note';
-import User from '@/lib/models/User';
-import {
-  createCategorySchema,
-  createNoteSchema,
-  forgotPasswordSchema,
-  renameCategorySchema,
-  resetPasswordSchema,
-  updateNoteSchema,
-  updateSettingsSchema,
-} from '@/lib/validations';
-import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
-import { isEmailConfigured, sendPasswordResetEmail } from '@/lib/email';
+import { gqlFetch } from '@/lib/graphql/client';
 import type { Note as NoteType } from '@/types';
 
-const RESET_SUCCESS_MESSAGE =
-  'A password reset link has been sent to your email address.';
+// ─── Shared Types ─────────────────────────────────────────────────────────────
 
 type ActionResult<T = undefined> =
   | { ok: true; data: T }
   | { ok: false; error: string };
 
-function serialize<T>(value: T): T {
-  return JSON.parse(JSON.stringify(value));
-}
-
-function validationMessage(error: { issues: { message: string }[] }, fallback: string) {
-  return error.issues[0]?.message || fallback;
-}
-
-async function getIp() {
-  const headerStore = await headers();
-  return (
-    headerStore.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-    headerStore.get('x-real-ip') ||
-    '127.0.0.1'
-  );
-}
-
-async function requireUserId() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) throw new Error('Unauthorized. Please sign in.');
-  return session.user.id;
-}
-
-async function enforceActionLimit(key: string) {
-  const result = await checkRateLimit(key, RATE_LIMITS.passwordReset);
-  if (!result.success) {
-    const minutes = Math.ceil((result.resetAt - Date.now()) / 60000);
-    throw new Error(`Too many attempts. Please try again in ${minutes} minute(s).`);
-  }
-}
+// ─── Notes ────────────────────────────────────────────────────────────────────
 
 export async function getNotesAction(showArchived = false): Promise<ActionResult<NoteType[]>> {
   try {
-    const userId = await requireUserId();
-    await connectDB();
-
-    const notes = await Note.find({ userId, isArchived: showArchived })
-      .sort({ isPinned: -1, updatedAt: -1 })
-      .lean();
-
-    return { ok: true, data: serialize(notes) };
+    const data = await gqlFetch<{ notes: NoteType[] }>(
+      `query GetNotes($archived: Boolean) {
+        notes(archived: $archived) {
+          _id title content category tags isPinned isArchived color userId createdAt updatedAt
+        }
+      }`,
+      { archived: showArchived }
+    );
+    return { ok: true, data: data.notes };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : 'Failed to fetch notes' };
   }
 }
 
-export async function getCategoriesAction(): Promise<ActionResult<string[]>> {
-  try {
-    const userId = await requireUserId();
-    await connectDB();
-
-    const user = await User.findById(userId).select('categories').lean();
-    return { ok: true, data: serialize(user?.categories || []) };
-  } catch (error) {
-    return { ok: false, error: error instanceof Error ? error.message : 'Failed to fetch categories' };
-  }
-}
-
 export async function saveNoteAction(noteData: Partial<NoteType>): Promise<ActionResult<NoteType>> {
   try {
-    const userId = await requireUserId();
-    await connectDB();
+    const data = await gqlFetch<{
+      saveNote: { ok: boolean; note: NoteType | null; error: string | null };
+    }>(
+      `mutation SaveNote($input: NoteInput!) {
+        saveNote(input: $input) {
+          ok
+          error
+          note {
+            _id title content category tags isPinned isArchived color userId createdAt updatedAt
+          }
+        }
+      }`,
+      { input: noteData }
+    );
 
-    const validation = noteData._id
-      ? updateNoteSchema.safeParse(noteData)
-      : createNoteSchema.safeParse(noteData);
-
-    if (!validation.success) {
-      return { ok: false, error: validationMessage(validation.error, 'Invalid note') };
+    const result = data.saveNote;
+    if (!result.ok || !result.note) {
+      return { ok: false, error: result.error ?? 'Failed to save note' };
     }
-
-    const note = noteData._id
-      ? await Note.findOneAndUpdate(
-          { _id: noteData._id, userId },
-          { $set: validation.data },
-          { new: true, runValidators: true }
-        )
-      : await Note.create({ ...validation.data, userId });
-
-    if (!note) return { ok: false, error: 'Note not found' };
-    return { ok: true, data: serialize(note) };
+    return { ok: true, data: result.note };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : 'Failed to save note' };
   }
@@ -116,34 +54,43 @@ export async function saveNoteAction(noteData: Partial<NoteType>): Promise<Actio
 
 export async function deleteNoteAction(noteId: string): Promise<ActionResult<true>> {
   try {
-    const userId = await requireUserId();
-    await connectDB();
+    const data = await gqlFetch<{ deleteNote: { ok: boolean; error: string | null } }>(
+      `mutation DeleteNote($id: ID!) {
+        deleteNote(id: $id) { ok error }
+      }`,
+      { id: noteId }
+    );
 
-    const note = await Note.findOneAndDelete({ _id: noteId, userId });
-    if (!note) return { ok: false, error: 'Note not found' };
+    const result = data.deleteNote;
+    if (!result.ok) return { ok: false, error: result.error ?? 'Failed to delete note' };
     return { ok: true, data: true };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : 'Failed to delete note' };
   }
 }
 
+// ─── Categories ───────────────────────────────────────────────────────────────
+
+export async function getCategoriesAction(): Promise<ActionResult<string[]>> {
+  try {
+    const data = await gqlFetch<{ categories: string[] }>(
+      `query GetCategories { categories }`
+    );
+    return { ok: true, data: data.categories };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : 'Failed to fetch categories' };
+  }
+}
+
 export async function createCategoryAction(name: string): Promise<ActionResult<string[]>> {
   try {
-    const userId = await requireUserId();
-    const validation = createCategorySchema.safeParse({ name });
-    if (!validation.success) {
-      return { ok: false, error: validationMessage(validation.error, 'Invalid category') };
-    }
-
-    await connectDB();
-    const user = await User.findByIdAndUpdate(
-      userId,
-      { $addToSet: { categories: validation.data.name } },
-      { new: true }
+    const data = await gqlFetch<{ createCategory: { categories: string[] } }>(
+      `mutation CreateCategory($name: String!) {
+        createCategory(name: $name) { categories }
+      }`,
+      { name }
     );
-
-    if (!user) return { ok: false, error: 'User not found' };
-    return { ok: true, data: serialize(user.categories) };
+    return { ok: true, data: data.createCategory.categories };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : 'Failed to create category' };
   }
@@ -151,22 +98,15 @@ export async function createCategoryAction(name: string): Promise<ActionResult<s
 
 export async function renameCategoryAction(oldName: string, newName: string): Promise<ActionResult<true>> {
   try {
-    const userId = await requireUserId();
-    const validation = renameCategorySchema.safeParse({ oldName, newName });
-    if (!validation.success) {
-      return { ok: false, error: validationMessage(validation.error, 'Invalid parameters') };
-    }
-
-    await connectDB();
-    await User.updateOne(
-      { _id: userId, categories: validation.data.oldName },
-      { $set: { 'categories.$': validation.data.newName } }
-    );
-    await Note.updateMany(
-      { userId, category: validation.data.oldName },
-      { $set: { category: validation.data.newName } }
+    const data = await gqlFetch<{ renameCategory: { ok: boolean; error: string | null } }>(
+      `mutation RenameCategory($oldName: String!, $newName: String!) {
+        renameCategory(oldName: $oldName, newName: $newName) { ok error }
+      }`,
+      { oldName, newName }
     );
 
+    const result = data.renameCategory;
+    if (!result.ok) return { ok: false, error: result.error ?? 'Failed to rename category' };
     return { ok: true, data: true };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : 'Failed to rename category' };
@@ -175,152 +115,33 @@ export async function renameCategoryAction(oldName: string, newName: string): Pr
 
 export async function deleteCategoryAction(name: string): Promise<ActionResult<true>> {
   try {
-    const userId = await requireUserId();
-    if (!name.trim()) return { ok: false, error: 'Category name is required.' };
+    const data = await gqlFetch<{ deleteCategory: { ok: boolean; error: string | null } }>(
+      `mutation DeleteCategory($name: String!) {
+        deleteCategory(name: $name) { ok error }
+      }`,
+      { name }
+    );
 
-    await connectDB();
-    await User.updateOne({ _id: userId }, { $pull: { categories: name } });
-    await Note.updateMany({ userId, category: name }, { $set: { category: 'other' } });
-
+    const result = data.deleteCategory;
+    if (!result.ok) return { ok: false, error: result.error ?? 'Failed to delete category' };
     return { ok: true, data: true };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : 'Failed to delete category' };
   }
 }
 
+// ─── Settings ─────────────────────────────────────────────────────────────────
+
 export async function updateThemeAction(theme: 'light' | 'dark'): Promise<ActionResult<'light' | 'dark'>> {
   try {
-    const userId = await requireUserId();
-    const validation = updateSettingsSchema.safeParse({ theme });
-    if (!validation.success) {
-      return { ok: false, error: validationMessage(validation.error, 'Invalid settings') };
-    }
-
-    await connectDB();
-    const user = await User.findByIdAndUpdate(
-      userId,
-      { theme: validation.data.theme },
-      { new: true }
+    const data = await gqlFetch<{ updateTheme: { theme: string } }>(
+      `mutation UpdateTheme($theme: String!) {
+        updateTheme(theme: $theme) { theme }
+      }`,
+      { theme }
     );
-
-    if (!user) return { ok: false, error: 'User not found' };
-    return { ok: true, data: user.theme };
+    return { ok: true, data: data.updateTheme.theme as 'light' | 'dark' };
   } catch (error) {
-    return { ok: false, error: error instanceof Error ? error.message : 'Failed to update settings' };
-  }
-}
-
-export async function forgotPasswordAction(emailInput: string): Promise<ActionResult<{ message: string; resetUrl?: string }>> {
-  try {
-    const ip = await getIp();
-    
-    const cooldownResult = await checkRateLimit(`forgot-password-cooldown:${ip}`, RATE_LIMITS.passwordResetCooldown);
-    if (!cooldownResult.success) {
-      const seconds = Math.ceil((cooldownResult.resetAt - Date.now()) / 1000);
-      throw new Error(`Please wait ${seconds} second(s) before requesting another password reset.`);
-    }
-
-    await enforceActionLimit(`forgot-password:${ip}`);
-
-    const validation = forgotPasswordSchema.safeParse({ email: emailInput });
-    if (!validation.success) {
-      return { ok: false, error: validationMessage(validation.error, 'Invalid email address.') };
-    }
-
-    await connectDB();
-    const user = await User.findOne({ email: validation.data.email });
-    if (!user) return { ok: false, error: 'No account found with this email address.' };
-
-    const rawToken = crypto.randomBytes(32).toString('hex');
-    const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
-    await User.updateOne(
-      { _id: user._id },
-      {
-        $set: {
-          resetPasswordToken: hashedToken,
-          resetPasswordExpires: new Date(Date.now() + 60 * 60 * 1000),
-        },
-      }
-    );
-
-    const headerStore = await headers();
-    const host = headerStore.get('host');
-    const proto = headerStore.get('x-forwarded-proto') || (host?.includes('localhost') ? 'http' : 'https');
-    const origin = host ? `${proto}://${host}` : (process.env.NEXTAUTH_URL || 'http://localhost:3000');
-    const resetUrl = `${origin}/auth/reset-password?token=${rawToken}&email=${encodeURIComponent(validation.data.email)}`;
-    const emailResult = await sendPasswordResetEmail({
-      to: validation.data.email,
-      resetUrl,
-      userName: user.name,
-    });
-
-    const data: { message: string; resetUrl?: string } = { message: RESET_SUCCESS_MESSAGE };
-    if (!emailResult.sent && (process.env.NODE_ENV === 'development' || !isEmailConfigured())) {
-      data.resetUrl = resetUrl;
-    }
-
-    return { ok: true, data };
-  } catch (error) {
-    return { ok: false, error: error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.' };
-  }
-}
-
-export async function resetPasswordAction(params: {
-  token: string;
-  email: string;
-  password: string;
-}): Promise<ActionResult<{ message: string }>> {
-  try {
-    const ip = await getIp();
-    await enforceActionLimit(`reset-password:${ip}`);
-
-    if (!params.token || !params.email) {
-      return { ok: false, error: 'Token and email are required.' };
-    }
-
-    const validation = resetPasswordSchema.safeParse({ password: params.password });
-    if (!validation.success) {
-      return { ok: false, error: validationMessage(validation.error, 'Invalid password.') };
-    }
-
-    await connectDB();
-    const user = await User.findOne({ email: params.email }).select(
-      '+resetPasswordToken +resetPasswordExpires'
-    );
-
-    const hashedToken = crypto.createHash('sha256').update(params.token).digest('hex');
-    if (
-      !user ||
-      user.resetPasswordToken !== hashedToken ||
-      !user.resetPasswordExpires ||
-      user.resetPasswordExpires < new Date()
-    ) {
-      return { ok: false, error: 'Invalid or expired password reset token.' };
-    }
-
-    await User.updateOne(
-      { _id: user._id },
-      {
-        $set: {
-          password: await bcrypt.hash(validation.data.password, 12),
-          passwordChangedAt: new Date(),
-          failedLoginAttempts: 0,
-          lockedUntil: null,
-        },
-        $unset: {
-          resetPasswordToken: 1,
-          resetPasswordExpires: 1,
-        },
-      }
-    );
-
-    return {
-      ok: true,
-      data: {
-        message: 'Your password has been successfully reset. You can now sign in with your new password.',
-      },
-    };
-  } catch (error) {
-    return { ok: false, error: error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.' };
+    return { ok: false, error: error instanceof Error ? error.message : 'Failed to update theme' };
   }
 }

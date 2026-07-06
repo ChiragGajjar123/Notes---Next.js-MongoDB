@@ -11,7 +11,7 @@ import { Header } from '@/components/Header';
 import { BackgroundBlobs } from '@/components/BackgroundBlobs';
 import { PasswordInput } from '@/components/PasswordInput';
 import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicator';
-import { resetPasswordAction } from '@/app/actions';
+import { resetPasswordAction } from '@/app/auth-actions';
 
 import { PASSWORD_REQUIREMENTS } from '@/lib/validations';
 

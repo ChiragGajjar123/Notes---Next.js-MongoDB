@@ -12,7 +12,7 @@ import { Header } from './Header';
 import { BackgroundBlobs } from './BackgroundBlobs';
 import { PasswordInput } from './PasswordInput';
 import { PasswordStrengthIndicator } from './PasswordStrengthIndicator';
-import { forgotPasswordAction } from '@/app/actions';
+import { forgotPasswordAction } from '@/app/auth-actions';
 
 import { PASSWORD_REQUIREMENTS } from '@/lib/validations';
 
