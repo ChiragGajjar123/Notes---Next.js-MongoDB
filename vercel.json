@@ -1,10 +1,7 @@
 {
   "devCommand": "next dev",
   "functions": {
-    "api/**/*.go": {
-      "maxDuration": 30
-    },
-    "app/api/**/*.ts": {
+    "api/*.go": {
       "maxDuration": 30
     }
   }

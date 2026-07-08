@@ -44,4 +44,4 @@ next-env.d.ts
 /vendor/
 *.exe
 *.test
-
+tmp_*

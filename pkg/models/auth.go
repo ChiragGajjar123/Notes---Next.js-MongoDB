@@ -9,7 +9,6 @@ import (
 
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
-	"go.mongodb.org/mongo-driver/v2/mongo/options"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -53,7 +52,6 @@ func AuthenticateUser(ctx context.Context, email, password string) (*FullUser, e
 
 	// Check if account is locked
 	if user.LockedUntil != nil && user.LockedUntil.After(now) {
-		minutes := int(time.Until(*user.LockedUntil).Minutes()) + 1
 		return nil, errors.New("account is temporarily locked. try again in some minutes")
 	}
 

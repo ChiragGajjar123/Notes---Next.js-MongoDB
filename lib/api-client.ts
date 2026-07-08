@@ -1,8 +1,10 @@
 import { getSessionUserId } from '@/lib/session';
 
-const API_BASE = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : 'http://localhost:3000';
+const VERCEL_URL = process.env.VERCEL_URL;
+const isLocal = !VERCEL_URL || VERCEL_URL.includes('localhost') || VERCEL_URL.includes('127.0.0.1');
+const API_BASE = isLocal
+  ? `http://${VERCEL_URL || 'localhost:3000'}`
+  : `https://${VERCEL_URL}`;
 
 export async function goApi<T>(
   path: string,

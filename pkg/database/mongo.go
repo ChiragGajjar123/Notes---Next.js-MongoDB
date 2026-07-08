@@ -25,10 +25,6 @@ func ConnectDB() (*mongo.Client, error) {
 			// default for local development if not set
 			uri = "mongodb://localhost:27017/notes-app"
 		}
-
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-
 		clientOpts := options.Client().ApplyURI(uri)
 		client, connErr := mongo.Connect(clientOpts)
 		if connErr != nil {
