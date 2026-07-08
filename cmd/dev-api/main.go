@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	handler "notes-app/api"
+	handler "notes-app/go-api"
 )
 
 func main() {
