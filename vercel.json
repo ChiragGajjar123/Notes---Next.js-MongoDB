@@ -1,18 +1,7 @@
 {
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/next"
-    },
-    {
-      "src": "go-api/*.go",
-      "use": "@vercel/go"
+  "functions": {
+    "api/*.go": {
+      "maxDuration": 30
     }
-  ],
-  "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "/go-api/:path*.go"
-    }
-  ]
+  }
 }
