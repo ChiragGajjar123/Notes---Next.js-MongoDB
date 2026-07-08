@@ -83,6 +83,7 @@ export async function signInAction(credentials: { email: string; password?: stri
 
     return { ok: true, data: user };
   } catch (error) {
+    console.error('[signInAction] Error during signin:', error);
     return { ok: false, error: error instanceof Error ? error.message : 'Invalid email or password.' };
   }
 }
@@ -111,6 +112,7 @@ export async function signUpAction(params: { name: string; email: string; passwo
 
     return { ok: true, data: user };
   } catch (error) {
+    console.error('[signUpAction] Error during signup:', error);
     return { ok: false, error: error instanceof Error ? error.message : 'Failed to register account.' };
   }
 }

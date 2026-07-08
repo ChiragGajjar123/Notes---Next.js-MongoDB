@@ -31,3 +31,4 @@ tmp_dev_api.out.log
 # Backups
 *.bak
 .vercel
+.env*
