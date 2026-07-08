@@ -1,6 +1,7 @@
 # Project Rules
 
 - **Git Pushes:** Never run `git push` or push changes to any remote repository directly without the user's explicit permission.
+- **Deployments:** Never run `vercel deploy` or `vercel --prod` to create deployments manually from the CLI, since Vercel deployments are automatically created when code is pushed to Git.
 
 # Project Documentation & Commands
 
