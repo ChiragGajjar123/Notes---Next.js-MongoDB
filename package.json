@@ -6,7 +6,7 @@
     "dev": "next dev",
     "dev:next": "next dev",
     "dev:api": "go run ./cmd/dev-api",
-    "dev:vercel": "vercel dev --listen 3000 --yes",
+    "dev:vercel": "npx vercel dev --listen 3000 --yes",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -42,7 +42,6 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
     "tailwindcss": "^4",
-    "typescript": "^5",
-    "vercel": "^54.21.1"
+    "typescript": "^5"
   }
 }
