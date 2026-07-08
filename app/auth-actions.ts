@@ -1,16 +1,9 @@
 'use server';
 
-import crypto from 'crypto';
-import bcrypt from 'bcryptjs';
 import { headers } from 'next/headers';
-import connectDB from '@/lib/mongoose';
-import User from '@/lib/models/User';
-import {
-  forgotPasswordSchema,
-  resetPasswordSchema,
-} from '@/lib/validations';
-import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
+import { forgotPasswordSchema, resetPasswordSchema } from '@/lib/validations';
 import { isEmailConfigured, sendPasswordResetEmail } from '@/lib/email';
+import { setSessionCookie, clearSessionCookie } from '@/lib/session';
 
 const RESET_SUCCESS_MESSAGE =
   'A password reset link has been sent to your email address.';
@@ -28,56 +21,118 @@ async function getIp() {
   );
 }
 
-async function enforceActionLimit(key: string) {
-  const result = await checkRateLimit(key, RATE_LIMITS.passwordReset);
-  if (!result.success) {
-    const minutes = Math.ceil((result.resetAt - Date.now()) / 60000);
-    throw new Error(`Too many attempts. Please try again in ${minutes} minute(s).`);
+async function callGoAuthApi<T>(path: string, body: any): Promise<T> {
+  const ip = await getIp();
+  const API_BASE = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : 'http://localhost:3000';
+
+  const internalKey = process.env.INTERNAL_API_KEY;
+  if (!internalKey) {
+    throw new Error('INTERNAL_API_KEY is not configured on the server');
+  }
+
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Internal-Key': internalKey,
+      'X-Client-IP': ip,
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Authentication server error');
+  }
+
+  return res.json() as Promise<T>;
+}
+
+export async function signInAction(credentials: { email: string; password?: string }): Promise<ActionResult<{ id: string; name: string; email: string }>> {
+  try {
+    const email = credentials.email?.trim().toLowerCase();
+    const password = credentials.password;
+
+    if (!email || !password) {
+      return { ok: false, error: 'Email and password are required' };
+    }
+
+    const user = await callGoAuthApi<{ id: string; name: string; email: string }>('/api/auth/signin', {
+      email,
+      password,
+    });
+
+    await setSessionCookie(user.id);
+
+    return { ok: true, data: user };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : 'Invalid email or password.' };
+  }
+}
+
+export async function signUpAction(params: { name: string; email: string; password?: string }): Promise<ActionResult<{ id: string; name: string; email: string }>> {
+  try {
+    const name = params.name?.trim();
+    const email = params.email?.trim().toLowerCase();
+    const password = params.password;
+
+    if (!name || !email || !password) {
+      return { ok: false, error: 'Name, email, and password are required' };
+    }
+
+    if (password.length < 8) {
+      return { ok: false, error: 'Password must be at least 8 characters long.' };
+    }
+
+    const user = await callGoAuthApi<{ id: string; name: string; email: string }>('/api/auth/signup', {
+      name,
+      email,
+      password,
+    });
+
+    await setSessionCookie(user.id);
+
+    return { ok: true, data: user };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : 'Failed to register account.' };
+  }
+}
+
+export async function signOutAction(): Promise<ActionResult<true>> {
+  try {
+    await clearSessionCookie();
+    return { ok: true, data: true };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : 'Failed to sign out.' };
   }
 }
 
 export async function forgotPasswordAction(emailInput: string): Promise<ActionResult<{ message: string; resetUrl?: string }>> {
   try {
-    const ip = await getIp();
-
-    const cooldownResult = await checkRateLimit(`forgot-password-cooldown:${ip}`, RATE_LIMITS.passwordResetCooldown);
-    if (!cooldownResult.success) {
-      const seconds = Math.ceil((cooldownResult.resetAt - Date.now()) / 1000);
-      throw new Error(`Please wait ${seconds} second(s) before requesting another password reset.`);
-    }
-
-    await enforceActionLimit(`forgot-password:${ip}`);
-
     const validation = forgotPasswordSchema.safeParse({ email: emailInput });
     if (!validation.success) {
       return { ok: false, error: validation.error.issues[0]?.message ?? 'Invalid email address.' };
     }
 
-    await connectDB();
-    const user = await User.findOne({ email: validation.data.email });
-    if (!user) return { ok: false, error: 'No account found with this email address.' };
-
-    const rawToken = crypto.randomBytes(32).toString('hex');
-    const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
-    await User.updateOne(
-      { _id: user._id },
-      {
-        $set: {
-          resetPasswordToken: hashedToken,
-          resetPasswordExpires: new Date(Date.now() + 60 * 60 * 1000),
-        },
-      }
-    );
+    const goRes = await callGoAuthApi<{
+      message: string;
+      userName: string;
+      rawToken: string;
+      userEmail: string;
+    }>('/api/auth/forgot-password', { email: validation.data.email });
 
     const headerStore = await headers();
     const host = headerStore.get('host');
     const proto = headerStore.get('x-forwarded-proto') || (host?.includes('localhost') ? 'http' : 'https');
     const origin = host ? `${proto}://${host}` : (process.env.NEXTAUTH_URL || 'http://localhost:3000');
-    const resetUrl = `${origin}/auth/reset-password?token=${rawToken}&email=${encodeURIComponent(validation.data.email)}`;
+    const resetUrl = `${origin}/auth/reset-password?token=${goRes.rawToken}&email=${encodeURIComponent(goRes.userEmail)}`;
+
     const emailResult = await sendPasswordResetEmail({
-      to: validation.data.email,
+      to: goRes.userEmail,
       resetUrl,
-      userName: user.name,
+      userName: goRes.userName,
     });
 
     const data: { message: string; resetUrl?: string } = { message: RESET_SUCCESS_MESSAGE };
@@ -97,9 +152,6 @@ export async function resetPasswordAction(params: {
   password: string;
 }): Promise<ActionResult<{ message: string }>> {
   try {
-    const ip = await getIp();
-    await enforceActionLimit(`reset-password:${ip}`);
-
     if (!params.token || !params.email) {
       return { ok: false, error: 'Token and email are required.' };
     }
@@ -109,41 +161,16 @@ export async function resetPasswordAction(params: {
       return { ok: false, error: validation.error.issues[0]?.message ?? 'Invalid password.' };
     }
 
-    await connectDB();
-    const user = await User.findOne({ email: params.email }).select(
-      '+resetPasswordToken +resetPasswordExpires'
-    );
-
-    const hashedToken = crypto.createHash('sha256').update(params.token).digest('hex');
-    if (
-      !user ||
-      user.resetPasswordToken !== hashedToken ||
-      !user.resetPasswordExpires ||
-      user.resetPasswordExpires < new Date()
-    ) {
-      return { ok: false, error: 'Invalid or expired password reset token.' };
-    }
-
-    await User.updateOne(
-      { _id: user._id },
-      {
-        $set: {
-          password: await bcrypt.hash(validation.data.password, 12),
-          passwordChangedAt: new Date(),
-          failedLoginAttempts: 0,
-          lockedUntil: null,
-        },
-        $unset: {
-          resetPasswordToken: 1,
-          resetPasswordExpires: 1,
-        },
-      }
-    );
+    const goRes = await callGoAuthApi<{ message: string }>('/api/auth/reset-password', {
+      token: params.token,
+      email: params.email,
+      password: validation.data.password,
+    });
 
     return {
       ok: true,
       data: {
-        message: 'Your password has been successfully reset. You can now sign in with your new password.',
+        message: goRes.message,
       },
     };
   } catch (error) {

@@ -1,44 +1,48 @@
-import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
-import { authOptions } from '@/lib/auth';
 import { NotesDashboard } from '@/components/NotesDashboard';
-import connectDB from '@/lib/mongoose';
-import Note from '@/lib/models/Note';
-import User from '@/lib/models/User';
+import { goApi } from '@/lib/api-client';
+import { getSessionUserId } from '@/lib/session';
+import type { Note as NoteType } from '@/types';
+
+interface UserSettingsResponse {
+  name: string;
+  email: string;
+  theme: string;
+  categories: string[];
+}
 
 export default async function Home() {
-  const session = await getServerSession(authOptions);
+  const userId = await getSessionUserId();
 
-  if (!session) {
+  if (!userId) {
     redirect('/auth/signin');
   }
 
-  await connectDB();
+  let initialNotes: NoteType[] = [];
+  let initialCategories: string[] = [];
+  let initialTheme = 'light';
+  let userName = '';
+  let userEmail = '';
 
-  // Fetch non-archived notes on SSR
-  const notesData = await Note.find({
-    userId: session.user.id,
-    isArchived: false,
-  })
-    .sort({ isPinned: -1, updatedAt: -1 })
-    .lean();
+  try {
+    // Fetch non-archived notes on SSR using the Go API
+    initialNotes = await goApi<NoteType[]>('/api/notes?archived=false');
 
-  // Convert MongoDB BSON data (ObjectIds, Dates) into plain JSON format safely
-  const initialNotes = JSON.parse(JSON.stringify(notesData));
-
-  // Fetch user settings (categories and theme)
-  const userData = await User.findById(session.user.id)
-    .select('categories theme')
-    .lean();
-
-  const initialCategories = userData?.categories || [];
-  const initialTheme = userData?.theme || 'light';
+    // Fetch user profile and settings from Go API in one single request
+    const settings = await goApi<UserSettingsResponse>('/api/settings');
+    initialTheme = settings.theme || 'light';
+    initialCategories = settings.categories || [];
+    userName = settings.name || '';
+    userEmail = settings.email || '';
+  } catch (error) {
+    console.error('Failed to load initial SSR data from Go backend:', error);
+  }
 
   const sessionUser = {
-    id: session.user.id,
-    name: session.user.name || null,
-    email: session.user.email || null,
-    image: session.user.image || null,
+    id: userId,
+    name: userName || null,
+    email: userEmail || null,
+    image: null,
   };
 
   return (

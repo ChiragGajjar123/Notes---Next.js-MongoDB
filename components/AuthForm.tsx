@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { signIn, getSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +11,7 @@ import { Header } from './Header';
 import { BackgroundBlobs } from './BackgroundBlobs';
 import { PasswordInput } from './PasswordInput';
 import { PasswordStrengthIndicator } from './PasswordStrengthIndicator';
-import { forgotPasswordAction } from '@/app/auth-actions';
+import { forgotPasswordAction, signInAction, signUpAction } from '@/app/auth-actions';
 
 import { PASSWORD_REQUIREMENTS } from '@/lib/validations';
 
@@ -170,23 +169,17 @@ export function AuthForm() {
     setState(prev => ({ ...prev, isLoading: true, error: '' }));
 
     try {
-      const result = await signIn('credentials', {
-        email: trimmedEmail,
-        password,
-        name: isSignUp ? trimmedName : '',
-        mode: isSignUp ? 'signup' : 'signin',
-        callbackUrl: '/',
-        redirect: false,
-      });
+      const result = isSignUp
+        ? await signUpAction({ name: trimmedName, email: trimmedEmail, password })
+        : await signInAction({ email: trimmedEmail, password });
 
-      if (result?.error) {
+      if (!result.ok) {
         setState(prev => ({
           ...prev,
           error: getAuthErrorMessage(result.error ?? '', isSignUp),
           isLoading: false,
         }));
       } else {
-        await getSession();
         router.replace('/');
       }
     } catch {

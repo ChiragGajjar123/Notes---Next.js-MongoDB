@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Archive, Sun, Moon, LogOut, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useSession, signOut } from 'next-auth/react';
+import { signOutAction } from '@/app/auth-actions';
 
 interface HeaderProps {
   isAuthPage?: boolean;
@@ -30,14 +30,13 @@ export function Header({
   isChangingTheme = false,
   sessionUser = null,
 }: HeaderProps) {
-  const { data: session } = useSession();
   const router = useRouter();
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   const handleSignOut = async () => {
     setIsSigningOut(true);
     try {
-      await signOut({ redirect: false });
+      await signOutAction();
       router.push('/auth/signin');
     } catch (error) {
       console.error('Sign out error:', error);
@@ -70,10 +69,10 @@ export function Header({
             )}
           </div>
 
-          {!isAuthPage && (session?.user || sessionUser) && (
+          {!isAuthPage && sessionUser && (
             <div className="flex min-w-0 flex-1 items-center justify-end gap-1.5 sm:gap-3">
               <span className="min-w-0 truncate text-xs font-medium text-muted-foreground sm:text-sm">
-                Hi, <span className="text-foreground">{(session?.user || sessionUser)?.name}</span>
+                Hi, <span className="text-foreground">{sessionUser.name}</span>
               </span>
               {toggleDarkMode && (
                 <Button

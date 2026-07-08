@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { NoteCard } from '@/components/NoteCard';
@@ -42,7 +41,6 @@ export function NotesDashboard({
   initialTheme,
   sessionUser,
 }: NotesDashboardProps) {
-  const { status } = useSession();
   const [state, setState] = useState({
     notes: initialNotes,
     isEditorOpen: false,
@@ -349,9 +347,6 @@ export function NotesDashboard({
     );
   }
 
-  if (status === 'unauthenticated') {
-    return null;
-  }
 
   const getNoteCount = (categoryName: string) => {
     if (categoryName === 'all') {
