@@ -66,53 +66,66 @@ async function callGoAuthApi<T>(path: string, body: JsonValue): Promise<T> {
 }
 
 export async function signInAction(credentials: { email: string; password?: string }): Promise<ActionResult<{ id: string; name: string; email: string }>> {
+  console.log('[signInAction] Starting signin for email:', credentials.email);
   try {
     const email = credentials.email?.trim().toLowerCase();
     const password = credentials.password;
 
     if (!email || !password) {
+      console.log('[signInAction] Validation failed: missing email or password');
       return { ok: false, error: 'Email and password are required' };
     }
 
+    console.log('[signInAction] Calling Go signin API...');
     const user = await callGoAuthApi<{ id: string; name: string; email: string }>('/api/signin', {
       email,
       password,
     });
+    console.log('[signInAction] Go signin API returned user ID:', user.id);
 
+    console.log('[signInAction] Setting session cookie for user...');
     await setSessionCookie(user.id);
+    console.log('[signInAction] Session cookie set successfully');
 
     return { ok: true, data: user };
   } catch (error) {
-    console.error('[signInAction] Error during signin:', error);
+    console.error('[signInAction] Error during signin step:', error);
     return { ok: false, error: error instanceof Error ? error.message : 'Invalid email or password.' };
   }
 }
 
 export async function signUpAction(params: { name: string; email: string; password?: string }): Promise<ActionResult<{ id: string; name: string; email: string }>> {
+  console.log('[signUpAction] Starting signup for email:', params.email);
   try {
     const name = params.name?.trim();
     const email = params.email?.trim().toLowerCase();
     const password = params.password;
 
     if (!name || !email || !password) {
+      console.log('[signUpAction] Validation failed: missing name, email, or password');
       return { ok: false, error: 'Name, email, and password are required' };
     }
 
     if (password.length < 8) {
+      console.log('[signUpAction] Validation failed: password length too short');
       return { ok: false, error: 'Password must be at least 8 characters long.' };
     }
 
+    console.log('[signUpAction] Calling Go signup API...');
     const user = await callGoAuthApi<{ id: string; name: string; email: string }>('/api/signup', {
       name,
       email,
       password,
     });
+    console.log('[signUpAction] Go signup API returned user ID:', user.id);
 
+    console.log('[signUpAction] Setting session cookie for user...');
     await setSessionCookie(user.id);
+    console.log('[signUpAction] Session cookie set successfully');
 
     return { ok: true, data: user };
   } catch (error) {
-    console.error('[signUpAction] Error during signup:', error);
+    console.error('[signUpAction] Error during signup step:', error);
     return { ok: false, error: error instanceof Error ? error.message : 'Failed to register account.' };
   }
 }
