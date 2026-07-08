@@ -13,38 +13,40 @@ import (
 
 var (
 	clientInstance *mongo.Client
-	clientOnce     sync.Once
+	clientMu       sync.Mutex
 )
 
 // ConnectDB returns a thread-safe singleton connection to MongoDB.
 func ConnectDB() (*mongo.Client, error) {
-	var err error
-	clientOnce.Do(func() {
-		uri := os.Getenv("MONGODB_URI")
-		if uri == "" {
-			// default for local development if not set
-			uri = "mongodb://localhost:27017/notes-app"
-		}
-		clientOpts := options.Client().ApplyURI(uri)
-		client, connErr := mongo.Connect(clientOpts)
-		if connErr != nil {
-			err = connErr
-			return
-		}
+	clientMu.Lock()
+	defer clientMu.Unlock()
 
-		// Ping the database
-		pingCtx, pingCancel := context.WithTimeout(context.Background(), 2*time.Second)
-		defer pingCancel()
-		if pingErr := client.Ping(pingCtx, nil); pingErr != nil {
-			err = pingErr
-			return
-		}
+	if clientInstance != nil {
+		return clientInstance, nil
+	}
 
-		clientInstance = client
-		log.Println("Successfully connected to MongoDB")
-	})
+	uri := os.Getenv("MONGODB_URI")
+	if uri == "" {
+		// default for local development if not set
+		uri = "mongodb://localhost:27017/notes-app"
+	}
+	clientOpts := options.Client().ApplyURI(uri)
+	client, err := mongo.Connect(clientOpts)
+	if err != nil {
+		return nil, err
+	}
 
-	return clientInstance, err
+	// Ping the database
+	pingCtx, pingCancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer pingCancel()
+	if err := client.Ping(pingCtx, nil); err != nil {
+		_ = client.Disconnect(context.Background())
+		return nil, err
+	}
+
+	clientInstance = client
+	log.Println("Successfully connected to MongoDB")
+	return clientInstance, nil
 }
 
 // GetCollection returns a mongo.Collection from the default database "notes-app" or parsed from URI
@@ -52,6 +54,9 @@ func GetCollection(name string) (*mongo.Collection, error) {
 	client, err := ConnectDB()
 	if err != nil {
 		return nil, err
+	}
+	if client == nil {
+		return nil, mongo.ErrClientDisconnected
 	}
 	// On Vercel / serverless environment, the DB name is usually determined by the MONGODB_URI or defaults to notes-app.
 	// Since we don't parse the DB name dynamically here for simplicity, we can default to "notes-app" or read from env.

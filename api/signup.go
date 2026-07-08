@@ -17,11 +17,10 @@ type signupInput struct {
 	Password string `json:"password"`
 }
 
-// Handler handles user registration validation
-func Handler(w http.ResponseWriter, r *http.Request) {
+// Signup handles user registration validation.
+func Signup(w http.ResponseWriter, r *http.Request) {
 	// Validate internal key (only internal NextAuth service should call signup)
-	_, err := auth.ValidateInternalRequest(r)
-	if err != nil {
+	if err := auth.ValidateInternalKey(r); err != nil {
 		response.Error(w, http.StatusUnauthorized, err.Error())
 		return
 	}
@@ -38,7 +37,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Enforce Rate Limiting for Signups
-	_, _, err = ratelimit.EnforceRateLimit(r.Context(), "signup", clientIP, ratelimit.SignupLimit)
+	_, _, err := ratelimit.EnforceRateLimit(r.Context(), "signup", clientIP, ratelimit.SignupLimit)
 	if err != nil {
 		response.Error(w, http.StatusTooManyRequests, err.Error())
 		return

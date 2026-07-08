@@ -26,11 +26,10 @@ type forgotPasswordResponse struct {
 	UserEmail string `json:"userEmail"`
 }
 
-// Handler handles forgot password request token generation
-func Handler(w http.ResponseWriter, r *http.Request) {
+// ForgotPassword handles forgot password request token generation.
+func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	// Validate internal key (only Next.js should call this)
-	_, err := auth.ValidateInternalRequest(r)
-	if err != nil {
+	if err := auth.ValidateInternalKey(r); err != nil {
 		response.Error(w, http.StatusUnauthorized, err.Error())
 		return
 	}
@@ -46,7 +45,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 1. Enforce cooldown rate limit (1 request per 60s)
-	_, _, err = ratelimit.EnforceRateLimit(r.Context(), "forgot-password-cooldown", clientIP, ratelimit.PasswordResetCooldownLimit)
+	_, _, err := ratelimit.EnforceRateLimit(r.Context(), "forgot-password-cooldown", clientIP, ratelimit.PasswordResetCooldownLimit)
 	if err != nil {
 		response.Error(w, http.StatusTooManyRequests, "Please wait 60 seconds before requesting another password reset.")
 		return

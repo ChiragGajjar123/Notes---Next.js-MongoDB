@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev:all": "vercel dev",
+    "dev:all": "powershell -ExecutionPolicy Bypass -File scripts/dev-all.ps1",
+    "dev:api": "go run ./cmd/dev-api",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",

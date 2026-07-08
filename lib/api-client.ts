@@ -1,10 +1,5 @@
 import { getSessionUserId } from '@/lib/session';
-
-const VERCEL_URL = process.env.VERCEL_URL;
-const isLocal = !VERCEL_URL || VERCEL_URL.includes('localhost') || VERCEL_URL.includes('127.0.0.1');
-const API_BASE = isLocal
-  ? `http://${VERCEL_URL || 'localhost:3000'}`
-  : `https://${VERCEL_URL}`;
+import { getApiBaseUrl } from '@/lib/api-base';
 
 export async function goApi<T>(
   path: string,
@@ -21,7 +16,9 @@ export async function goApi<T>(
     throw new Error('INTERNAL_API_KEY environment variable is not configured');
   }
 
-  const res = await fetch(`${API_BASE}${path}`, {
+  const apiBase = await getApiBaseUrl();
+
+  const res = await fetch(`${apiBase}${path}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',

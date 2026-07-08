@@ -19,11 +19,10 @@ type resetPasswordInput struct {
 	Password string `json:"password"`
 }
 
-// Handler handles password reset execution
-func Handler(w http.ResponseWriter, r *http.Request) {
+// ResetPassword handles password reset execution.
+func ResetPassword(w http.ResponseWriter, r *http.Request) {
 	// Validate internal key
-	_, err := auth.ValidateInternalRequest(r)
-	if err != nil {
+	if err := auth.ValidateInternalKey(r); err != nil {
 		response.Error(w, http.StatusUnauthorized, err.Error())
 		return
 	}
@@ -39,7 +38,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Enforce rate limit (3 attempts per hour)
-	_, _, err = ratelimit.EnforceRateLimit(r.Context(), "reset-password", clientIP, ratelimit.PasswordResetLimit)
+	_, _, err := ratelimit.EnforceRateLimit(r.Context(), "reset-password", clientIP, ratelimit.PasswordResetLimit)
 	if err != nil {
 		response.Error(w, http.StatusTooManyRequests, err.Error())
 		return
@@ -70,8 +69,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	hasher.Write([]byte(token))
 	hashedToken := hex.EncodeToString(hasher.Sum(nil))
 
-	err = models.ResetPasswordByToken(r.Context(), email, hashedToken, password)
-	if err != nil {
+	if err := models.ResetPasswordByToken(r.Context(), email, hashedToken, password); err != nil {
 		response.Error(w, http.StatusBadRequest, err.Error())
 		return
 	}

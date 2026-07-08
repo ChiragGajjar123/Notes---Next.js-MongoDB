@@ -16,11 +16,10 @@ type signinInput struct {
 	Password string `json:"password"`
 }
 
-// Handler handles signin credential validation
-func Handler(w http.ResponseWriter, r *http.Request) {
+// Signin handles signin credential validation.
+func Signin(w http.ResponseWriter, r *http.Request) {
 	// Validate internal key (only internal NextAuth service should call signin)
-	_, err := auth.ValidateInternalRequest(r)
-	if err != nil {
+	if err := auth.ValidateInternalKey(r); err != nil {
 		response.Error(w, http.StatusUnauthorized, err.Error())
 		return
 	}
@@ -37,7 +36,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Enforce Rate Limiting
-	_, _, err = ratelimit.EnforceRateLimit(r.Context(), "login", clientIP, ratelimit.LoginLimit)
+	_, _, err := ratelimit.EnforceRateLimit(r.Context(), "login", clientIP, ratelimit.LoginLimit)
 	if err != nil {
 		response.Error(w, http.StatusTooManyRequests, err.Error())
 		return

@@ -4,6 +4,7 @@ import { headers } from 'next/headers';
 import { forgotPasswordSchema, resetPasswordSchema } from '@/lib/validations';
 import { isEmailConfigured, sendPasswordResetEmail } from '@/lib/email';
 import { setSessionCookie, clearSessionCookie } from '@/lib/session';
+import { getApiBaseUrl } from '@/lib/api-base';
 
 const RESET_SUCCESS_MESSAGE =
   'A password reset link has been sent to your email address.';
@@ -11,6 +12,14 @@ const RESET_SUCCESS_MESSAGE =
 type ActionResult<T = undefined> =
   | { ok: true; data: T }
   | { ok: false; error: string };
+
+type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | { [key: string]: JsonValue };
 
 async function getIp() {
   const headerStore = await headers();
@@ -21,20 +30,16 @@ async function getIp() {
   );
 }
 
-async function callGoAuthApi<T>(path: string, body: any): Promise<T> {
+async function callGoAuthApi<T>(path: string, body: JsonValue): Promise<T> {
   const ip = await getIp();
-  const VERCEL_URL = process.env.VERCEL_URL;
-  const isLocal = !VERCEL_URL || VERCEL_URL.includes('localhost') || VERCEL_URL.includes('127.0.0.1');
-  const API_BASE = isLocal
-    ? `http://${VERCEL_URL || 'localhost:3000'}`
-    : `https://${VERCEL_URL}`;
+  const apiBase = await getApiBaseUrl();
 
   const internalKey = process.env.INTERNAL_API_KEY;
   if (!internalKey) {
     throw new Error('INTERNAL_API_KEY is not configured on the server');
   }
 
-  const url = `${API_BASE}${path}`;
+  const url = `${apiBase}${path}`;
   console.log(`[callGoAuthApi] Fetching: ${url}`);
 
   try {
