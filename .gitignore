@@ -32,3 +32,7 @@ tmp_dev_api.out.log
 *.bak
 .vercel
 .env*
+
+# TypeScript
+*.tsbuildinfo
+
