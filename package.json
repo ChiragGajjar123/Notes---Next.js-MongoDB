@@ -4,7 +4,6 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev:vercel": "npx vercel dev --listen 3000 --yes",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
