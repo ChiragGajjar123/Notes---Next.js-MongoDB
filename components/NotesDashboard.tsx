@@ -92,13 +92,23 @@ export function NotesDashboard({
   };
 
   const setIsInitialLoading = (val: boolean) => setState(prev => ({ ...prev, isInitialLoading: val }));
-  const setNotes = (val: Note[]) => setState(prev => ({ ...prev, notes: val }));
+  const setNotes = (val: Note[] | ((prev: Note[]) => Note[])) => {
+    setState(prev => ({
+      ...prev,
+      notes: typeof val === 'function' ? (val as (prev: Note[]) => Note[])(prev.notes) : val
+    }));
+  };
   const setIsEditorOpen = (val: boolean) => setState(prev => ({ ...prev, isEditorOpen: val }));
   const setEditingNote = (val: Note | null) => setState(prev => ({ ...prev, editingNote: val }));
   const setSearchQuery = (val: string) => setState(prev => ({ ...prev, searchQuery: val }));
   const setSelectedCategory = (val: string) => setState(prev => ({ ...prev, selectedCategory: val }));
   const setIsDarkMode = (val: boolean) => setState(prev => ({ ...prev, isDarkMode: val }));
-  const setSavedCategories = (val: string[]) => setState(prev => ({ ...prev, savedCategories: val }));
+  const setSavedCategories = (val: string[] | ((prev: string[]) => string[])) => {
+    setState(prev => ({
+      ...prev,
+      savedCategories: typeof val === 'function' ? (val as (prev: string[]) => string[])(prev.savedCategories) : val
+    }));
+  };
   const setIsDeletingNoteId = (val: string | null) => setState(prev => ({ ...prev, isDeletingNoteId: val }));
   const setPinningNoteId = (val: string | null) => setState(prev => ({ ...prev, pinningNoteId: val }));
   const setArchivingNoteId = (val: string | null) => setState(prev => ({ ...prev, archivingNoteId: val }));
@@ -202,8 +212,7 @@ export function NotesDashboard({
     try {
       const result = await deleteCategoryAction(name);
       if (result.ok) {
-        await fetchCategories();
-        await fetchNotes();
+        setSavedCategories(prev => prev.filter(c => c !== name));
       }
     } catch (e) { 
       console.error(e); 
@@ -227,8 +236,24 @@ export function NotesDashboard({
       const result = await saveNoteAction(noteData);
       if (!result.ok) throw new Error(result.error);
 
-      await fetchNotes();
-      await fetchCategories();
+      const savedNote = result.data;
+      setNotes(prevNotes => {
+        const nextNotes = [...prevNotes];
+        const index = nextNotes.findIndex(n => n._id === savedNote._id);
+        if (index > -1) {
+          nextNotes[index] = savedNote;
+        } else {
+          nextNotes.push(savedNote);
+        }
+        
+        // Sort: isPinned desc, then updatedAt desc (matches MongoDB sort)
+        return nextNotes.sort((a, b) => {
+          if (a.isPinned !== b.isPinned) {
+            return a.isPinned ? -1 : 1;
+          }
+          return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+        });
+      });
     } catch (error) {
       console.error('Error saving note:', error);
       throw error;
@@ -245,7 +270,7 @@ export function NotesDashboard({
     try {
       const result = await deleteNoteAction(noteIdToDelete);
       if (result.ok) {
-        await fetchNotes();
+        setNotes(prevNotes => prevNotes.filter(n => n._id !== noteIdToDelete));
       }
     } catch (error) {
       console.error('Error deleting note:', error);
@@ -586,8 +611,13 @@ export function NotesDashboard({
         isOpen={isCreateCategoryOpen}
         onClose={() => setIsCreateCategoryOpen(false)}
         mode="create"
-        onSuccess={async (categoryName) => {
-          await fetchCategories();
+        onSuccess={(categoryName) => {
+          setSavedCategories(prev => {
+            if (!prev.includes(categoryName)) {
+              return [...prev, categoryName];
+            }
+            return prev;
+          });
           setSelectedCategory(categoryName);
         }}
       />
@@ -597,12 +627,18 @@ export function NotesDashboard({
         onClose={() => setCategoryToRename(null)}
         mode="rename"
         categoryToRename={categoryToRename}
-        onSuccess={async (newName) => {
-          if (selectedCategory === categoryToRename) {
-            setSelectedCategory(newName);
+        onSuccess={(newName) => {
+          if (categoryToRename) {
+            if (selectedCategory === categoryToRename) {
+              setSelectedCategory(newName);
+            }
+            setNotes(prevNotes => 
+              prevNotes.map(n => n.category === categoryToRename ? { ...n, category: newName } : n)
+            );
+            setSavedCategories(prevCats => 
+              prevCats.map(c => c === categoryToRename ? newName : c)
+            );
           }
-          await fetchNotes();
-          await fetchCategories();
         }}
       />
 
