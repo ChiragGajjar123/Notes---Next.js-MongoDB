@@ -59,6 +59,7 @@ export function NotesDashboard({
     deletingCategoryName: null as string | null,
     isChangingTheme: false,
     isInitialLoading: false,
+    isFetchingNotes: false,
     viewMode: 'grid' as 'grid' | 'list',
     noteIdToDelete: null as string | null,
   });
@@ -80,6 +81,7 @@ export function NotesDashboard({
     deletingCategoryName,
     isChangingTheme,
     isInitialLoading,
+    isFetchingNotes,
     viewMode,
     noteIdToDelete,
   } = state;
@@ -114,6 +116,7 @@ export function NotesDashboard({
   const setArchivingNoteId = (val: string | null) => setState(prev => ({ ...prev, archivingNoteId: val }));
   const setDeletingCategoryName = (val: string | null) => setState(prev => ({ ...prev, deletingCategoryName: val }));
   const setIsChangingTheme = (val: boolean) => setState(prev => ({ ...prev, isChangingTheme: val }));
+  const setIsFetchingNotes = (val: boolean) => setState(prev => ({ ...prev, isFetchingNotes: val }));
   const setViewMode = (val: 'grid' | 'list') => setState(prev => ({ ...prev, viewMode: val }));
   const setNoteIdToDelete = (val: string | null) => setState(prev => ({ ...prev, noteIdToDelete: val }));
   const setCategoryToRename = (val: string | null) => setState(prev => ({ ...prev, categoryToRename: val }));
@@ -121,14 +124,22 @@ export function NotesDashboard({
   const setIsCreateCategoryOpen = (val: boolean) => setState(prev => ({ ...prev, isCreateCategoryOpen: val }));
 
   const fetchNotes = useCallback(async (isInitial = false) => {
-    if (isInitial) setIsInitialLoading(true);
+    if (isInitial) {
+      setIsInitialLoading(true);
+    } else {
+      setIsFetchingNotes(true);
+    }
     try {
       const result = await getNotesAction(showArchived);
       if (result.ok) setNotes(result.data);
     } catch (error) {
       console.error('Error fetching notes:', error);
     } finally {
-      if (isInitial) setIsInitialLoading(false);
+      if (isInitial) {
+        setIsInitialLoading(false);
+      } else {
+        setIsFetchingNotes(false);
+      }
     }
   }, [showArchived]);
 
@@ -421,6 +432,7 @@ export function NotesDashboard({
         isDarkMode={isDarkMode}
         toggleDarkMode={toggleDarkMode}
         isChangingTheme={isChangingTheme}
+        isFetchingNotes={isFetchingNotes}
         sessionUser={sessionUser}
       />
 
@@ -554,7 +566,23 @@ export function NotesDashboard({
               </div>
             </div>
 
-            {filteredNotes.length === 0 ? (
+            {isFetchingNotes ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-5 sm:gap-6 animate-pulse">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div key={i} className="p-5 sm:p-6 bg-card/85 dark:bg-card/40 border border-border/50 rounded-2xl h-48 space-y-4">
+                    <div className="h-5 bg-muted rounded-md w-2/3" />
+                    <div className="space-y-2">
+                      <div className="h-4 bg-muted rounded-md w-full" />
+                      <div className="h-4 bg-muted rounded-md w-5/6" />
+                    </div>
+                    <div className="pt-4 border-t border-border/40 flex justify-between">
+                      <div className="h-4 bg-muted rounded-md w-16" />
+                      <div className="h-4 bg-muted rounded-md w-20" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : filteredNotes.length === 0 ? (
               <div className="flex flex-col items-center justify-center p-6 sm:p-16 glass dark:glass-dark rounded-2xl sm:rounded-3xl border border-border/50 text-center animate-in fade-in zoom-in duration-500 shadow-sm">
                 <div className="w-16 h-16 sm:w-20 sm:h-20 bg-primary/10 rounded-full flex items-center justify-center mb-4 sm:mb-6">
                   <FileText className="h-8 w-8 text-primary" />

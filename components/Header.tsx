@@ -13,6 +13,7 @@ interface HeaderProps {
   isDarkMode?: boolean;
   toggleDarkMode?: () => void;
   isChangingTheme?: boolean;
+  isFetchingNotes?: boolean;
   sessionUser?: {
     id: string;
     name?: string | null;
@@ -28,6 +29,7 @@ export function Header({
   isDarkMode,
   toggleDarkMode,
   isChangingTheme = false,
+  isFetchingNotes = false,
   sessionUser = null,
 }: HeaderProps) {
   const router = useRouter();
@@ -55,15 +57,20 @@ export function Header({
                 Notes
               </h1>
             </div>
-            {!isAuthPage && setShowArchived && (
+             {!isAuthPage && setShowArchived && (
               <Button
                 variant={showArchived ? 'secondary' : 'ghost'}
                 size="sm"
+                disabled={isFetchingNotes || isSigningOut}
                 onClick={() => setShowArchived(!showArchived)}
                 aria-label={showArchived ? 'Show active notes' : 'Show archived notes'}
                 className="h-8 w-8 rounded-full px-0 text-xs transition-all sm:h-9 sm:w-auto sm:px-3 sm:text-sm"
               >
-                <Archive className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4 sm:mr-2" />
+                {isFetchingNotes ? (
+                  <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin sm:h-4 sm:w-4 sm:mr-2" />
+                ) : (
+                  <Archive className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4 sm:mr-2" />
+                )}
                 <span className="hidden sm:inline">{showArchived ? 'Active' : 'Archived'}</span>
               </Button>
             )}
