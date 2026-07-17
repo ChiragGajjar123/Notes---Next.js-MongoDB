@@ -238,6 +238,10 @@ export function NotesDashboard({
 
       const savedNote = result.data;
       setNotes(prevNotes => {
+        if (savedNote.isArchived !== showArchived) {
+          return prevNotes.filter(n => n._id !== savedNote._id);
+        }
+
         const nextNotes = [...prevNotes];
         const index = nextNotes.findIndex(n => n._id === savedNote._id);
         if (index > -1) {
