@@ -310,11 +310,13 @@ export function NotesDashboard({
 
   const toggleDarkMode = async () => {
     const newMode = !isDarkMode;
-    setIsDarkMode(newMode);
     setIsChangingTheme(true);
     
     try {
-      await updateThemeAction(newMode ? 'dark' : 'light');
+      const result = await updateThemeAction(newMode ? 'dark' : 'light');
+      if (result.ok) {
+        setIsDarkMode(newMode);
+      }
     } catch (error) {
       console.error('Failed to save theme preference:', error);
     } finally {

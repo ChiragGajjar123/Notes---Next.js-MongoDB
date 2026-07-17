@@ -1,6 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ReactNode } from 'react';
+import { Loader2 } from 'lucide-react';
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -58,13 +59,14 @@ export function ConfirmDialog({
             <>
               <Button 
                 onClick={onConfirm} 
-                className={`w-full rounded-xl font-bold sm:w-auto h-11 ${
+                className={`w-full rounded-xl font-bold sm:w-auto h-11 flex items-center justify-center gap-2 ${
                   isDestructive 
                     ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' 
                     : 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-md shadow-primary/25'
                 }`}
                 disabled={isLoading}
               >
+                {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
                 {confirmLabel}
               </Button>
               <Button 
