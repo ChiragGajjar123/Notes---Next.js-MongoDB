@@ -5,16 +5,53 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { createCategoryAction, renameCategoryAction } from '@/app/actions';
+import { useNotes } from '@/context/notes-context';
 
 interface CategoryDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
   mode: 'create' | 'rename';
-  categoryToRename?: string | null;
-  onSuccess: (categoryName: string) => Promise<void> | void;
 }
 
-export function CategoryDialog({ isOpen, onClose, mode, categoryToRename, onSuccess }: CategoryDialogProps) {
+export function CategoryDialog({ mode }: CategoryDialogProps) {
+  const {
+    isCreateCategoryOpen,
+    setIsCreateCategoryOpen,
+    categoryToRename,
+    setCategoryToRename,
+    selectedCategory,
+    setSelectedCategory,
+    setSavedCategories,
+    setNotes,
+  } = useNotes();
+
+  const isCreate = mode === 'create';
+  const isOpen = isCreate ? isCreateCategoryOpen : categoryToRename !== null;
+  const onClose = () => isCreate ? setIsCreateCategoryOpen(false) : setCategoryToRename(null);
+  const currentCategoryToRename = isCreate ? null : categoryToRename;
+
+  const onSuccess = (newName: string) => {
+    if (isCreate) {
+      setSavedCategories(prev => {
+        if (!prev.includes(newName)) {
+          return [...prev, newName];
+        }
+        return prev;
+      });
+      setSelectedCategory(newName);
+    } else {
+      if (categoryToRename) {
+        if (selectedCategory === categoryToRename) {
+          setSelectedCategory(newName);
+        }
+        setNotes(prevNotes => 
+          prevNotes.map(n => n.category === categoryToRename ? { ...n, category: newName } : n)
+        );
+        setSavedCategories(prevCats => 
+          prevCats.map(c => c === categoryToRename ? newName : c)
+        );
+      }
+    }
+  };
+
   const [state, setState] = useState({
     categoryName: '',
     isLoading: false,
@@ -24,15 +61,13 @@ export function CategoryDialog({ isOpen, onClose, mode, categoryToRename, onSucc
   // Sync state with props when dialog opens/changes mode
   useEffect(() => {
     if (isOpen) {
-      if (mode === 'rename' && categoryToRename) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setState(prev => ({ ...prev, categoryName: categoryToRename }));
+      if (mode === 'rename' && currentCategoryToRename) {
+        setState(prev => ({ ...prev, categoryName: currentCategoryToRename }));
       } else {
-         
         setState(prev => ({ ...prev, categoryName: '' }));
       }
     }
-  }, [isOpen, mode, categoryToRename]);
+  }, [isOpen, mode, currentCategoryToRename]);
 
   const handleSubmit = async () => {
     const trimmedName = categoryName.trim();
@@ -42,12 +77,12 @@ export function CategoryDialog({ isOpen, onClose, mode, categoryToRename, onSucc
     try {
       const result = mode === 'create'
         ? await createCategoryAction(trimmedName)
-        : categoryToRename
-          ? await renameCategoryAction(categoryToRename, trimmedName)
+        : currentCategoryToRename
+          ? await renameCategoryAction(currentCategoryToRename, trimmedName)
           : { ok: false, error: 'Missing category name.' };
 
       if (result.ok) {
-        await onSuccess(trimmedName);
+        onSuccess(trimmedName);
         onClose();
       } else {
         console.error(`Failed to ${mode} category:`, result.error);
@@ -59,7 +94,6 @@ export function CategoryDialog({ isOpen, onClose, mode, categoryToRename, onSucc
     }
   };
 
-  const isCreate = mode === 'create';
   const titleText = isCreate ? 'Create New Category' : 'Rename Category';
   const descText = isCreate
     ? 'Add a new folder to organize your notes. You can drag and drop notes into this folder later.'

@@ -5,28 +5,27 @@ import { Button } from '@/components/ui/button';
 import { Pin, Archive, Trash2, Edit, Calendar, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Note } from '@/types';
+import { useNotes } from '@/context/notes-context';
 
 interface NoteCardProps {
   note: Note;
-  onEdit: (note: Note) => void;
-  onDelete: (noteId: string) => void;
-  onTogglePin: (noteId: string) => void;
-  onToggleArchive: (noteId: string) => void;
-  isPinning?: boolean;
-  isArchiving?: boolean;
-  isDeleting?: boolean;
 }
 
-export function NoteCard({ 
-  note, 
-  onEdit, 
-  onDelete, 
-  onTogglePin, 
-  onToggleArchive,
-  isPinning = false,
-  isArchiving = false,
-  isDeleting = false
-}: NoteCardProps) {
+export function NoteCard({ note }: NoteCardProps) {
+  const {
+    handleEditNote: onEdit,
+    handleDeleteNoteTrigger: onDelete,
+    handleTogglePin: onTogglePin,
+    handleToggleArchive: onToggleArchive,
+    pinningNoteId,
+    archivingNoteId,
+    isDeletingNoteId,
+  } = useNotes();
+
+  const isPinning = pinningNoteId === note._id;
+  const isArchiving = archivingNoteId === note._id;
+  const isDeleting = isDeletingNoteId === note._id;
+
   // Strip HTML tags for clean preview
   const plainTextContent = note.content.replace(/<[^>]+>/g, ' ');
   const isDisabled = isPinning || isArchiving || isDeleting;
@@ -46,7 +45,6 @@ export function NoteCard({
     ? `0 12px 30px -8px ${note.color}20, 0 4px 12px -5px ${note.color}15`
     : undefined;
 
-
   return (
     <Card 
       className={`p-4 sm:p-6 h-full flex flex-col group cursor-pointer transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl border border-border/50 bg-card/80 backdrop-blur-xl dark:bg-card/40 overflow-hidden relative rounded-2xl ${isDisabled ? 'opacity-70 pointer-events-none' : ''}`}
@@ -54,9 +52,7 @@ export function NoteCard({
       style={{ 
         borderColor: parsedBorderColor,
         background: parsedBgColor,
-        boxShadow: hoverShadow ? undefined : undefined // We handle custom box shadow on style tag hover if needed, or via inline styles
       }}
-      // Use CSS variables or hover inline style to support dynamic shadow glows on hover
       onMouseEnter={(e) => {
         if (hoverShadow) {
           e.currentTarget.style.boxShadow = hoverShadow;
@@ -136,7 +132,6 @@ export function NoteCard({
                 className="px-2.5 py-0.5 bg-secondary/40 text-muted-foreground border border-border/50 text-[10px] sm:text-xs font-semibold rounded-full hover:bg-secondary/60 hover:text-foreground transition-all cursor-pointer"
                 onClick={(e) => {
                   e.stopPropagation();
-                  // Tags click could filter eventually, but keep styling clean
                 }}
               >
                 #{tag}

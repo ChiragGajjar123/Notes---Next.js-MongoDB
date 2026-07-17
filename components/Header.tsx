@@ -5,35 +5,24 @@ import { useRouter } from 'next/navigation';
 import { Archive, Sun, Moon, LogOut, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { signOutAction } from '@/app/auth-actions';
+import { useOptionalNotes } from '@/context/notes-context';
 
 interface HeaderProps {
   isAuthPage?: boolean;
-  showArchived?: boolean;
-  setShowArchived?: (show: boolean) => void;
-  isDarkMode?: boolean;
-  toggleDarkMode?: () => void;
-  isChangingTheme?: boolean;
-  isFetchingNotes?: boolean;
-  sessionUser?: {
-    id: string;
-    name?: string | null;
-    email?: string | null;
-    image?: string | null;
-  } | null;
 }
 
-export function Header({
-  isAuthPage = false,
-  showArchived,
-  setShowArchived,
-  isDarkMode,
-  toggleDarkMode,
-  isChangingTheme = false,
-  isFetchingNotes = false,
-  sessionUser = null,
-}: HeaderProps) {
+export function Header({ isAuthPage = false }: HeaderProps) {
   const router = useRouter();
   const [isSigningOut, setIsSigningOut] = useState(false);
+
+  const notesContext = useOptionalNotes();
+  const showArchived = notesContext?.showArchived;
+  const setShowArchived = notesContext?.setShowArchived;
+  const isDarkMode = notesContext?.isDarkMode;
+  const toggleDarkMode = notesContext?.toggleDarkMode;
+  const isChangingTheme = notesContext?.isChangingTheme || false;
+  const isFetchingNotes = notesContext?.isFetchingNotes || false;
+  const sessionUser = notesContext?.sessionUser || null;
 
   const handleSignOut = async () => {
     setIsSigningOut(true);
@@ -57,7 +46,7 @@ export function Header({
                 Notes
               </h1>
             </div>
-             {!isAuthPage && setShowArchived && (
+            {!isAuthPage && setShowArchived && (
               <Button
                 variant={showArchived ? 'secondary' : 'ghost'}
                 size="sm"

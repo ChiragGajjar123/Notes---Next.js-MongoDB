@@ -11,15 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 
 import { Bold, Italic, List, ListOrdered, Quote, Redo, Undo, Palette, Tag, Folder, ChevronDown, Loader2, X, Plus } from 'lucide-react';
 import { Note } from '@/types';
-
-interface NoteEditorProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSave: (note: Partial<Note>) => Promise<void>;
-  note?: Note | null;
-  existingCategories: string[];
-  defaultCategory?: string;
-}
+import { useNotes } from '@/context/notes-context';
 
 const PRESET_COLORS = [
   { name: 'Default', value: '#ffffff' },
@@ -32,7 +24,18 @@ const PRESET_COLORS = [
   { name: 'Violet', value: '#f3e8ff' },
 ];
 
-export function NoteEditor({ isOpen, onClose, onSave, note, existingCategories, defaultCategory = 'other' }: NoteEditorProps) {
+export function NoteEditor() {
+  const {
+    isEditorOpen: isOpen,
+    setIsEditorOpen,
+    editingNote: note,
+    handleSaveNote: onSave,
+    editorCategories: existingCategories,
+    editorDefaultCategory: defaultCategory = 'other',
+  } = useNotes();
+
+  const onClose = () => setIsEditorOpen(false);
+
   const [state, setState] = useState({
     title: '',
     category: 'other' as Note['category'],
